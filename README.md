@@ -35,11 +35,11 @@ Le dossier **Python/** contient un script permettant d'insérer des données dan
 ### ▶️ Exécuter le script Python
 1. Installe les dépendances :
    ```bash
-   pip install -r requirements.txt
+   PAS ENCORE FAIT
    ```
 2. Lance le script :
    ```bash
-   python main.py
+   PAS ENCORE FAIT
    ```
 
 ---
@@ -56,12 +56,7 @@ docker-compose down
 ```
 
 ### Comment accéder à la base de données MongoDB ?
-Tu peux utiliser Mongo Express via [localhost:8081](http://localhost:8081) ou te connecter directement avec un client MongoDB :
-```bash
-mongo --host localhost --port 27017 -u admin -p password --authenticationDatabase admin
-```
+En utilisant Mongo Express via [localhost:8081](http://localhost:8081)
 
 ---
-
-✨ Bon développement ! 🚀
 
