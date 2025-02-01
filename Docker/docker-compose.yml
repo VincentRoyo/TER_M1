@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   mongodb:
-    image: mongo:latest
+    image: mongo:6.0
     container_name: mongodb_container
     restart: always
     ports:
@@ -26,14 +24,14 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
       ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password
     networks:
       - mongo_network
 
-data:
+volumes:
   mongo_data:
-    driver: local
   mongo_config:
-    driver: local
 
 networks:
   mongo_network:
