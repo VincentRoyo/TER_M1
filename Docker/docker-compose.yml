@@ -9,7 +9,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
-      - ./data/mongo_data:/data/db  # Sauvegarde des données
       - ./data/mongo_config:/data/configdb  # Sauvegarde de la configuration
     networks:
       - mongo_network
@@ -28,6 +27,18 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     networks:
       - mongo_network
+      
+  init-db:
+    build:
+       context: ../Python
+    container_name: init_db_container
+    volumes:
+      - ../Python:/app
+    depends_on:
+      - mongodb
+    networks:
+      - mongo_network
+    restart: "no"
 
 networks:
   mongo_network:

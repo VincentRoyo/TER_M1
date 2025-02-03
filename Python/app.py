@@ -6,15 +6,18 @@ import pandas as pd
 
 # desactiver l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/deactivate"
 
-mongo_client = pymongo.MongoClient("mongodb://admin:password@localhost:27017/") # lien de la bd
+print("Connecting to MongoDB...")
+mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
 mongo_db = mongo_client["TER"] # nom de la bd
 mongo_col = mongo_db["forest"]
 
-csv_files = glob.glob("..\DataForest\*.csv") 
+csv_files = glob.glob("./DataForest/*.csv") 
+print(f"CSV files : {csv_files}")
 
 # Dans le cas où les données sont répartis dans plusieurs fichiers CSV
 for file in csv_files :
 
+    print(f"Lecture du fichier CSV : {file}")
     df = pd.read_csv(file)
 
     trees = {}
@@ -77,4 +80,9 @@ for file in csv_files :
         })
 
     result = list(trees.values())
-    mongo_col.insert_many(result)
+    try:
+    	result = mongo_col.insert_many(result)
+    	print("Data inserted !")
+    except Exception as e:
+    	print(f"Error while inserting data: {e}")
+    
