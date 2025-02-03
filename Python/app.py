@@ -6,7 +6,7 @@ import pandas as pd
 
 # desactiver l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/deactivate"
 
-mongo_client = pymongo.MongoClient("mongodb://localhost:27017/") # lien de la bd
+mongo_client = pymongo.MongoClient("mongodb://admin:password@localhost:27017/") # lien de la bd
 mongo_db = mongo_client["TER"] # nom de la bd
 mongo_col = mongo_db["forest"]
 
