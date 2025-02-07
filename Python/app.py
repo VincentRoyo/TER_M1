@@ -1,15 +1,28 @@
 import glob
 import pymongo
 import pandas as pd
+import couchdb
 
 # activer l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/activate"
-
 # desactiver l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/deactivate"
 
-print("Connecting to MongoDB...")
-mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
-mongo_db = mongo_client["TER"] # nom de la bd
-mongo_col = mongo_db["forest"]
+try: 
+    print("Connecting to MongoDB...")
+    mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
+    mongo_db = mongo_client["TER"] # nom de la bd
+    mongo_col = mongo_db["forest"]
+except Exception as e : 
+    print(f"Error while connecting to MongoDB: {e}")
+
+
+try :
+    print("Connecting to CouchDB...")
+    couch_client = couchdb.Server("https://admin:password@localhost:5984/") # lien de la bd
+    couch_db = couch_client["TER"] # nom de la bd
+    couch_col = couch_db["forest"]
+except Exception as e :
+    print(f"Error while connecting to CouchDB: {e}")
+
 
 csv_files = glob.glob("./DataForest/*.csv") 
 print(f"CSV files : {csv_files}")
@@ -81,8 +94,14 @@ for file in csv_files :
 
     result = list(trees.values())
     try:
-    	result = mongo_col.insert_many(result)
-    	print("Data inserted !")
+        mongo_col.insert_many(result)
+
+        for doc in result:
+            doc_id = str(doc["tree"]["id"]) 
+            doc["_id"] = doc_id
+            couch_db.save(doc)
+
+        print("Data inserted !")
     except Exception as e:
-    	print(f"Error while inserting data: {e}")
+        print(f"Error while inserting data: {e}")
     

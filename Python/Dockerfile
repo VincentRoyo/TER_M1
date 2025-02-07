@@ -2,7 +2,7 @@
 FROM python:3.9
 
 # Installer pymongo
-RUN pip install pymongo pandas
+RUN pip install pymongo pandas couchdb
 
 # Copier le script Python dans le conteneur
 COPY app.py /app/app.py
