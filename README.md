@@ -15,7 +15,7 @@ Le dossier **Docker/** contient un fichier `docker-compose.yml` qui initialise :
 
 - Un serveur **MongoDB** pour stocker les données.
 - Une interface web **Mongo Express** accessible à l'adresse : [localhost:8081](http://localhost:8081).
-- Un conteneur python insérant les données contenus dans tous les fichiers csv de **Python/DataForest** dans la base mongodb
+- Un conteneur Python insérant les données contenus dans tous les fichiers CSV de **Python/DataForest** dans la base MongoDB
 
 ### 🔑 Identifiants Mongo Express :
 - **Utilisateur** : `admin`
@@ -31,13 +31,65 @@ Cela démarre MongoDB et Mongo Express avec les données.
 ---
 
 ## 🐍 Application Python
-Le dossier **Python/ contient un script **app.py permettant d'insérer des données dans MongoDB.
+Le dossier **Python/** contient un script **app.py** permettant d'insérer des données dans MongoDB et CouchDB.
 
 ### ▶️ Exécuter le script Python
-- Le script s'éxécute automatiquement dans son conteneur docker lors du lancement du fichier compose.
+- Le script s'exécute automatiquement dans son conteneur Docker lors du lancement du fichier **`Docker/MongoDB/docker-compose.yml`**.
 
 ### ▶️ Que fait le script ?
-- Le script python se charge de structurer les données contenus dans les fichiers csv dans le format json prédéfini : (mettre lien rapport ou format json)
+- Le script Python se charge de structurer les données contenus dans les fichiers CSV dans le format json prédéfini : 
+
+```json
+{
+  "forest": "Forest_Name",
+  "plot": {
+    "id": "Plot_ID",
+    "area": "PlotArea",
+    "sub_plot": "SubPlot"
+  },
+  "tree": {
+    "field_number": "TreeFieldNum",
+    "id": "idTree",
+    "species": {
+      "family": "Family",
+      "genus": "Genus",
+      "species": "Species",
+      "source": "BotaSource",
+      "certainty": "BotaCertainty"
+    },
+    "vernacular": {
+      "id": "idVern",
+      "name": "VernName",
+      "commercial_species": "CommercialSp"
+    }
+  },
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      "Lon",
+      "Lat"
+    ]
+  },
+  "measurements": [
+    {
+      "census": {
+        "year": "CensusYear",
+        "date": "CensusDate",
+        "date_certainty": "CensusDateCertainty"
+      },
+      "status": {
+        "alive_code": "CodeAlive",
+        "measurement_code": "MeasCode",
+        "circumference": {
+          "value": "Circ",
+          "corrected_value": "CircCorr",
+          "correction_code": "CorrCode"
+        }
+      }
+    }
+  ]
+}
+```
 
 ---
 
