@@ -1,18 +1,6 @@
 import glob
-import pymongo
 import pandas as pd
 import couchdb
-
-# activer l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/activate"
-# desactiver l'environnement virtuel sur Linux : "source ./Python/venv/Scripts/deactivate"
-
-try: 
-    print("Connecting to MongoDB...")
-    mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
-    mongo_db = mongo_client["TER"] # nom de la bd
-    mongo_col = mongo_db["forest"]
-except Exception as e : 
-    print(f"Error while connecting to MongoDB: {e}")
 
 
 try :
@@ -94,8 +82,7 @@ for file in csv_files :
 
     result = list(trees.values())
     try:
-        mongo_col.insert_many(result)
-
+        
         for doc in result:
             doc_id = str(doc["tree"]["id"]) 
             doc["_id"] = doc_id
