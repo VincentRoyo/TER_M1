@@ -5,7 +5,7 @@
 Le projet est organisé en trois dossiers principaux :
 
 - **`Docker/`** : Contient le fichier `docker-compose.yml` permettant de déployer un environnement avec **MongoDB** et **Mongo Express**.
-- **`Python/`** : Contient une application en Python qui insère des données dans MongoDB.
+- **`Python/`** : Contient des applications en Python qui insère des données dans MongoDB et CouchDB.
 - **`Python/DataForest/`** : Contient les fichiers de données bruts non formatés.
 
 ---
@@ -31,13 +31,13 @@ Cela démarre MongoDB et Mongo Express avec les données.
 ---
 
 ## 🐍 Application Python
-Le dossier **Python/** contient un script **app.py** permettant d'insérer des données dans MongoDB et CouchDB.
+Le dossier **Python/** contient deux scripts **script-mongo.py** et **script-couch.py** permettant d'insérer des données dans MongoDB et CouchDB.
 
-### ▶️ Exécuter le script Python
-- Le script s'exécute automatiquement dans son conteneur Docker lors du lancement du fichier **`Docker/MongoDB/docker-compose.yml`**.
+### ▶️ Exécuter les scripts Python
+- Les script s'exécutent automatiquement dans leur conteneur Docker lors du lancement du fichier **`Docker/MongoDB/docker-compose.yml`**.
 
-### ▶️ Que fait le script ?
-- Le script Python se charge de structurer les données contenus dans les fichiers CSV dans le format json prédéfini : 
+### ▶️ Que font les scripts ?
+- Les scripts Python se chargent de structurer les données contenus dans les fichiers CSV au format JSON prédéfini : 
 
 ```json
 {

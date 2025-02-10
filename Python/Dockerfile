@@ -4,8 +4,9 @@ FROM python:3.9
 # Installer pymongo
 RUN pip install pymongo pandas couchdb
 
-# Copier le script Python dans le conteneur
-COPY app.py /app/app.py
+# Copier les scripts Python dans le conteneur
+COPY script-mongo.py /app/script-mongo.py
+#COPY script-couch.py /app/script-couch.py
 
 COPY ./DataForest/ /app/DataForest/
 
@@ -13,4 +14,5 @@ COPY ./DataForest/ /app/DataForest/
 WORKDIR /app
 
 # Lancer le script Python
-CMD ["python", "app.py"]
+CMD ["python", "script-mongo.py"]
+#CMD ["python", "script-couch.py"]
