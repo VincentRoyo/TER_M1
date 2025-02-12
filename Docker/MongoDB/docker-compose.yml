@@ -30,10 +30,12 @@ services:
       
   init-db:
     build:
-       context: ../Python
+       context: ../../
+       dockerfile: Python/DockerFiles/MongoDB/Dockerfile
     container_name: init_db_container
     volumes:
-      - ../Python:/app
+      - ../../Python:/app
+      - ./output:/app/output
     depends_on:
       - mongodb
     networks:
