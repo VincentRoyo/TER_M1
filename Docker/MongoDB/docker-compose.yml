@@ -34,7 +34,6 @@ services:
        dockerfile: Python/DockerFiles/MongoDB/Dockerfile
     container_name: init_db_container
     volumes:
-      - ../../Python:/app
       - ./output:/app/output
     depends_on:
       - mongodb

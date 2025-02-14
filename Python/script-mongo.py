@@ -1,6 +1,11 @@
 import glob
 import pymongo
 import pandas as pd
+import logging
+
+# Logger pour générer un fichier de log
+logger = logging.getLogger("")
+logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, format='%(levelname)s :: %(asctime)s :: %(message)s')
 
 """
 {
@@ -315,26 +320,26 @@ def transformToJSON3(df):
 """
 def insertData():
     try: 
-        print("Connecting to MongoDB...")
+        logger.info("Connecting to MongoDB...")
         mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
         mongo_db = mongo_client["TER"] # nom de la bd
         mongo_col1 = mongo_db["forest1"]
         mongo_col2 = mongo_db["forest2"]
         mongo_col3 = mongo_db["forest3"]
     except Exception as e : 
-        print(f"Error while connecting to MongoDB: {e}")
+        logger.error(f"Error while connecting to MongoDB: {e}")
 
 
 
     csv_files = glob.glob("./DataForest/*.csv") 
-    print(f"CSV files : {csv_files}")
+    logger.info(f"CSV files : {csv_files}")
 
 
 
     # Dans le cas où les données sont répartis dans plusieurs fichiers CSV
     for file in csv_files :
 
-        print(f"Lecture du fichier CSV : {file}")
+        logger.info(f"Lecture du fichier CSV : {file}")
         df = pd.read_csv(file)
 
         firstTrees = transformToJSON(df)
@@ -345,9 +350,9 @@ def insertData():
             mongo_col1.insert_many(list(firstTrees.values()))
             mongo_col2.insert_one(secondTrees)
             mongo_col3.insert_one(thirdTrees)
-            print("Data inserted !")
+            logger.info("Data inserted !")
         except Exception as e:
-            print(f"Error while inserting data: {e}")
+            logger.error(f"Error while inserting data: {e}")
 
 
 insertData()

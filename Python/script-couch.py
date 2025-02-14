@@ -1,11 +1,11 @@
 import glob
 import pandas as pd
 import couchdb
+import logging
 
-
-import glob
-import pymongo
-import pandas as pd
+# Logger pour générer un fichier de log
+logger = logging.getLogger("")
+logging.basicConfig(filename='/app/output/couch_init.log', level=logging.INFO, format='%(levelname)s :: %(asctime)s :: %(message)s')
 
 """
 {
@@ -320,23 +320,23 @@ def transformToJSON3(df):
 """
 def insertData():
     try: 
-        print("Connecting to CouchDB...")
+        logging.info("Connecting to CouchDB...")
         couch_client = couchdb.Server("https://admin:password@localhost:5984/") # lien de la bd
         couch_db1 = couch_client["TER1"] # nom de la bd
         couch_db2 = couch_client["TER2"]
         couch_db3 = couch_client["TER3"]
 
     except Exception as e : 
-        print(f"Error while connecting to CouchDB: {e}")
+        logging.error(f"Error while connecting to CouchDB: {e}")
 
 
     csv_files = glob.glob("./DataForest/*.csv") 
-    print(f"CSV files : {csv_files}")
+    logging.info(f"CSV files : {csv_files}")
 
 
     for file in csv_files :
 
-        print(f"Lecture du fichier CSV : {file}")
+        logging.info(f"Lecture du fichier CSV : {file}")
         df = pd.read_csv(file)
 
         firstTrees = transformToJSON(df)
@@ -353,9 +353,9 @@ def insertData():
                 couch_db2.save(doc)
             for doc in result3:
                 couch_db3.save(doc)
-            print("Data inserted !")
+            logging.info("Data inserted !")
         except Exception as e:
-            print(f"Error while inserting data: {e}")
+            logging.error(f"Error while inserting data: {e}")
 
 
 insertData()
