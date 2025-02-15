@@ -1,6 +1,6 @@
 import glob
 import pandas as pd
-import couchdb
+import couchdb3
 import logging
 
 # Logger pour générer un fichier de log
@@ -184,53 +184,52 @@ def transformToJSON2(df):
       tree_id = row["idTree"]
       
       if "Indet." not in row["Family"] and "Indet." not in row["Genus"] and "Indet." not in row["Species"]:
-          if tree_id not in trees:
-              trees[tree_id] = {
-                  "type": "Feature",
-                  "geometry": {
-                      "type": "Point",
-                      "coordinates": [row["Lon"], row["Lat"]]
-                  },
-                  "properties": {
-                      "forest": row["Forest"],
-                      "plot": {
-                          "id": row["Plot"],
-                          "area": row["PlotArea"],
-                          "sub_plot": row["SubPlot"]
-                      },
-                      "tree": {
-                          "field_number": row["TreeFieldNum"],
-                          "id": tree_id,
-                          "species": {
-                              "family": row["Family"],
-                              "genus": row["Genus"],
-                              "species": row["Species"],
-                              "source": row["BotaSource"],
-                              "certainty": row["BotaCertainty"] == "VRAI"
-                          },
-                          "vernacular": {
-                              "id": row["idVern"],
-                              "name": row["VernName"],
-                              "commercial_species": row["CommercialSp"] == "VRAI"
-                          }
-                      },
-                      "census": {
-                          "year": row["CensusYear"],
-                          "date": row["CensusDate"],
-                          "date_certainty": row["CensusDateCertainty"] == "VRAI"
-                      },
-                      "status": {
-                          "alive_code": row["CodeAlive"],
-                          "measurement_code": row["MeasCode"],
-                          "circumference": {
-                              "value": row["Circ"],
-                              "corrected_value": row["CircCorr"],
-                              "correction_code": row["CorrCode"]
-                          }
-                      }
-                  }
-              }
-              feature_collection["features"].append(trees[tree_id])
+        trees[tree_id] = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["Lon"], row["Lat"]]
+            },
+            "properties": {
+                "forest": row["Forest"],
+                "plot": {
+                    "id": row["Plot"],
+                    "area": row["PlotArea"],
+                    "sub_plot": row["SubPlot"]
+                },
+                "tree": {
+                    "field_number": row["TreeFieldNum"],
+                    "id": tree_id,
+                    "species": {
+                        "family": row["Family"],
+                        "genus": row["Genus"],
+                        "species": row["Species"],
+                        "source": row["BotaSource"],
+                        "certainty": row["BotaCertainty"] == "VRAI"
+                    },
+                    "vernacular": {
+                        "id": row["idVern"],
+                        "name": row["VernName"],
+                        "commercial_species": row["CommercialSp"] == "VRAI"
+                    }
+                },
+                "census": {
+                    "year": row["CensusYear"],
+                    "date": row["CensusDate"],
+                    "date_certainty": row["CensusDateCertainty"] == "VRAI"
+                },
+                "status": {
+                    "alive_code": row["CodeAlive"] == "VRAI",
+                    "measurement_code": row["MeasCode"],
+                    "circumference": {
+                        "value": row["Circ"],
+                        "corrected_value": row["CircCorr"],
+                        "correction_code": row["CorrCode"]
+                    }
+                }
+            }
+        }
+        feature_collection["features"].append(trees[tree_id])
   
   return feature_collection
 
@@ -276,42 +275,48 @@ def transformToJSON2(df):
 def transformToJSON3(df):
 
   feature_collection = {"type": "FeatureCollection", "features": []}
-  
+  trees = {}
+
   for _, row in df.iterrows():
-      feature = {
-          "type": "Feature",
-          "geometry": {
-              "type": "Point",
-              "coordinates": [row["Lon"], row["Lat"]]
-          },
-          "properties": {
-              "forest": row["Forest"],
-              "plot_id": row["Plot"],
-              "plot_area": row["PlotArea"],
-              "plot_sub_plot": row["SubPlot"],
-              "tree_field_number": row["TreeFieldNum"],
-              "tree_id": row["idTree"],
-              "tree_species_family": row["Family"],
-              "tree_species_genus": row["Genus"],
-              "tree_species_species": row["Species"],
-              "tree_species_source": row["BotaSource"],
-              "tree_species_certainty": row["BotaCertainty"] == "VRAI",
-              "tree_vernacular_id": row["idVern"],
-              "tree_vernacular_name": row["VernName"],
-              "tree_vernacular_commercial_species": row["CommercialSp"] == "VRAI",
-              "census_year": row["CensusYear"],
-              "census_date": row["CensusDate"],
-              "census_date_certainty": row["CensusDateCertainty"] == "VRAI",
-              "status_alive_code": row["CodeAlive"],
-              "status_measurement_code": row["MeasCode"],
-              "status_circumference_value": row["Circ"],
-              "status_circumference_corrected_value": row["CircCorr"],
-              "status_circumference_correction_code": row["CorrCode"]
-          }
-      }
-      feature_collection["features"].append(feature)
+      
+      tree_id = row["idTree"]
+      
+      if "Indet." not in row["Family"] and "Indet." not in row["Genus"] and "Indet." not in row["Species"]:
+        trees[tree_id] = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["Lon"], row["Lat"]]
+            },
+            "properties": {
+                "forest": row["Forest"],
+                "plot_id": row["Plot"],
+                "plot_area": row["PlotArea"],
+                "plot_sub_plot": row["SubPlot"],
+                "tree_field_number": row["TreeFieldNum"],
+                "tree_id": row["idTree"],
+                "tree_species_family": row["Family"],
+                "tree_species_genus": row["Genus"],
+                "tree_species_species": row["Species"],
+                "tree_species_source": row["BotaSource"],
+                "tree_species_certainty": row["BotaCertainty"] == "VRAI",
+                "tree_vernacular_id": row["idVern"],
+                "tree_vernacular_name": row["VernName"],
+                "tree_vernacular_commercial_species": row["CommercialSp"] == "VRAI",
+                "census_year": row["CensusYear"],
+                "census_date": row["CensusDate"],
+                "census_date_certainty": row["CensusDateCertainty"] == "VRAI",
+                "status_alive_code": row["CodeAlive"] == "VRAI",
+                "status_measurement_code": row["MeasCode"],
+                "status_circumference_value": row["Circ"],
+                "status_circumference_corrected_value": row["CircCorr"],
+                "status_circumference_correction_code": row["CorrCode"]
+            }
+        }
+        feature_collection["features"].append(trees[tree_id])
   
   return feature_collection
+  
   
 
 
@@ -321,10 +326,15 @@ def transformToJSON3(df):
 def insertData():
     try: 
         logging.info("Connecting to CouchDB...")
-        couch_client = couchdb.Server("https://admin:password@localhost:5984/") # lien de la bd
-        couch_db1 = couch_client["TER1"] # nom de la bd
-        couch_db2 = couch_client["TER2"]
-        couch_db3 = couch_client["TER3"]
+        client = couchdb3.Server(
+            "127.0.0.1:5984",  # Scheme omitted - will assume http protocol
+            user="admin",
+            password="password"
+        )
+        print(client.up)
+        couch_db1 = client.create("ter1")
+        couch_db2 = client.create("ter2")
+        couch_db3 = client.create("ter3")
 
     except Exception as e : 
         logging.error(f"Error while connecting to CouchDB: {e}")

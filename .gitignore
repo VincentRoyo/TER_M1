@@ -1,2 +1,4 @@
 /Docker/MongoDB/output/
 /Docker/MongoDB/data/
+/Docker/CouchDB/output/
+/Docker/CouchDB/data/

@@ -8,9 +8,22 @@ services:
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
-    volumes:
-      - ./couchdb_data:/opt/couchdb/data
+    networks:
+      - couch_network
 
-volumes:
-  couchdb_data:
-    driver: local
+  init-db:
+    build:
+       context: ../../
+       dockerfile: Python/DockerFiles/CouchDB/Dockerfile
+    container_name: init_db_container
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      - couchdb
+    restart: "no"
+    networks:
+      - couch_network
+
+networks:
+  couch_network:
+    driver: bridge
