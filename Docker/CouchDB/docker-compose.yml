@@ -8,8 +8,11 @@ services:
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
-    networks:
-      - couch_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
 
   init-db:
     build:
@@ -19,11 +22,6 @@ services:
     volumes:
       - ./output:/app/output
     depends_on:
-      - couchdb
+      couchdb:
+        condition: service_healthy
     restart: "no"
-    networks:
-      - couch_network
-
-networks:
-  couch_network:
-    driver: bridge

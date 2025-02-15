@@ -327,14 +327,19 @@ def insertData():
     try: 
         logging.info("Connecting to CouchDB...")
         client = couchdb3.Server(
-            "127.0.0.1:5984",  # Scheme omitted - will assume http protocol
+            "couchdb:5984",
             user="admin",
             password="password"
         )
-        print(client.up)
-        couch_db1 = client.create("ter1")
-        couch_db2 = client.create("ter2")
-        couch_db3 = client.create("ter3")
+        
+        db_name1 = "forest1"
+        db_name2 = "forest2"
+        db_name3 = "forest3"
+        
+        logging.info(f"Etat de la connexion: {client.up()}")
+        couch_db1 = client.get(db_name1) if db_name1 in client else client.create(db_name1)
+        couch_db2 = client.get(db_name2) if db_name2 in client else client.create(db_name2)
+        couch_db3 = client.get(db_name3) if db_name3 in client else client.create(db_name3)
 
     except Exception as e : 
         logging.error(f"Error while connecting to CouchDB: {e}")
@@ -354,15 +359,16 @@ def insertData():
         thirdTrees = transformToJSON3(df)
 
         result1 = list(firstTrees.values())
-        result2 = list(secondTrees.values())
-        result3 = list(thirdTrees.values())
+        result2 = secondTrees
+        result3 = thirdTrees
+       
+      
         try:
             for doc in result1:
-                couch_db1.save(doc)
-            for doc in result2:
-                couch_db2.save(doc)
-            for doc in result3:
-                couch_db3.save(doc)
+                couch_db1.create(doc)
+            
+            couch_db2.create(result2)
+            couch_db3.create(result3)
             logging.info("Data inserted !")
         except Exception as e:
             logging.error(f"Error while inserting data: {e}")
