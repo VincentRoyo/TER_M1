@@ -9,9 +9,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
-      - ./data/mongo_config:/data/configdb  # Sauvegarde de la configuration
+      - ./data/mongo_config:/data/configdb #A retirer je pense pas nécéssaire
     networks:
       - mongo_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
 
   mongo-express:
     image: mongo-express
@@ -50,10 +55,9 @@ services:
     restart: always
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/mydatabase
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - mongo_network
 
