@@ -8,6 +8,8 @@ services:
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
+    volumes:
+      - ./local.ini:/opt/couchdb/etc/local.ini  
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5984"]
       interval: 5s
