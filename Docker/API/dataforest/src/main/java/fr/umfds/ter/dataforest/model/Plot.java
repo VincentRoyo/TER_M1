@@ -12,5 +12,7 @@ public class Plot {
     private Integer area;
 
     @Field("sub_plot")
-    private Integer subPlot; //MAPPER POUR AVOIR L'OBJET SOUS PLOT QUI EST UN PLOT ?
+    private SubPlot subPlot; //MAPPER POUR AVOIR L'OBJET SOUS PLOT QUI EST UN PLOT ?
+
+    private Location location;
 }

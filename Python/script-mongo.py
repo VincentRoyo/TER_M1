@@ -27,7 +27,7 @@ def grahamScan(geojson_list):
         "type": "Feature",
         "geometry": {
             "type": "Polygon",
-            "coordinates": [hull_points]
+            "coordinates": hull_points
         },
         "properties": {}
     }
@@ -49,15 +49,26 @@ def grahamScan(geojson_list):
     "plot": {
       "id": "Plot_ID",
       "area": "PlotArea",
-      "sub_plot": "SubPlot",
+      "sub_plot": {
+        "id": "SubPlot",
+        "location": {
+          "type": "Feature",
+          "geometry": 
+          {
+            "type": "Polygon",
+            "coordinates": [
+              ["Lon","Lat"]
+            ]
+          } 
+        }
+      },
       "location": {
         "type": "Feature",
         "geometry": 
         {
           "type": "Polygon",
           "coordinates": [
-            "Lon",
-            "Lat"
+            ["Lon","Lat"]
           ]
         } 
       }
@@ -119,7 +130,9 @@ def transformToJSON(df):
                       "plot": {
                           "id": row["Plot"],
                           "area": row["PlotArea"],
-                          "sub_plot": row["SubPlot"]
+                          "sub_plot": {
+                             "id": row["SubPlot"]
+                          }
                       },
                       "tree": {
                           "field_number": row["TreeFieldNum"],
@@ -163,6 +176,10 @@ def transformToJSON(df):
     {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
   ]).reset_index(name="geometry")
 
+  grouped_sub_geometry = df.groupby("SubPlot").apply(lambda g: [
+    {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
+  ]).reset_index(name="geometry")
+
 
   for _, row in grouped_geometry.iterrows():
     convex_hull_geojson = grahamScan(row["geometry"])
@@ -170,6 +187,13 @@ def transformToJSON(df):
     for key, tree in trees.items():
       if tree["properties"]["plot"]["id"] == row["Plot"]:
         tree["properties"]["plot"]["location"] = convex_hull_geojson
+
+  for _, row in grouped_sub_geometry.iterrows():
+    convex_hull_geojson = grahamScan(row["geometry"])
+
+    for key, tree in trees.items():
+      if tree["properties"]["plot"]["sub_plot"]["id"] == row["SubPlot"]:
+        tree["properties"]["plot"]["sub_plot"]["location"] = convex_hull_geojson
 
   return trees
 
