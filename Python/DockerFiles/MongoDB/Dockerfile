@@ -2,7 +2,7 @@
 FROM python:3.9
 
 # Installer pymongo
-RUN pip install pymongo pandas
+RUN pip install pymongo pandas scipy
 
 # Copier les scripts Python dans le conteneur
 COPY ../../Python/script-mongo.py /app/script-mongo.py

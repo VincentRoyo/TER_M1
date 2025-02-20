@@ -2,10 +2,37 @@ import glob
 import pymongo
 import pandas as pd
 import logging
+from scipy.spatial import ConvexHull
 
 # Logger pour générer un fichier de log
 logger = logging.getLogger("")
 logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, format='%(levelname)s :: %(asctime)s :: %(message)s')
+
+
+"""
+Prend une liste de GeoJSON de type Point et retourne un GeoJSON de type Polygon représentant l'enveloppe convexe.
+"""
+def grahamScan(geojson_list):
+    
+    points = [feature["coordinates"] for feature in geojson_list if feature["type"] == "Point"]
+
+    if len(points) < 3:
+        return None
+
+    hull = ConvexHull(points)
+    hull_points = [points[i] for i in hull.vertices]
+    hull_points.append(hull_points[0])
+
+    convex_hull_geojson = {
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [hull_points]
+        },
+        "properties": {}
+    }
+
+    return convex_hull_geojson
 
 """
 {
@@ -22,7 +49,18 @@ logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, f
     "plot": {
       "id": "Plot_ID",
       "area": "PlotArea",
-      "sub_plot": "SubPlot"
+      "sub_plot": "SubPlot",
+      "location": {
+        "type": "Feature",
+        "geometry": 
+        {
+          "type": "Polygon",
+          "coordinates": [
+            "Lon",
+            "Lat"
+          ]
+        } 
+      }
     },
     "tree": {
       "field_number": "TreeFieldNum",
@@ -120,6 +158,19 @@ def transformToJSON(df):
               }
           })
   
+
+  grouped_geometry = df.groupby("Plot").apply(lambda g: [
+    {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
+  ]).reset_index(name="geometry")
+
+
+  for _, row in grouped_geometry.iterrows():
+    convex_hull_geojson = grahamScan(row["geometry"])
+
+    for key, tree in trees.items():
+      if tree["properties"]["plot"]["id"] == row["Plot"]:
+        tree["properties"]["plot"]["location"] = convex_hull_geojson
+
   return trees
 
 
@@ -354,6 +405,20 @@ def insertData():
             mongo_col1.insert_many(list(firstTrees.values()))
             mongo_col2.insert_one(secondTrees)
             mongo_col3.insert_one(thirdTrees)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             logger.info("Data inserted !")
         except Exception as e:
             logger.error(f"Error while inserting data: {e}")
