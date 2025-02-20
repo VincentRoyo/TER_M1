@@ -1,6 +1,38 @@
 import glob
 import pymongo
 import pandas as pd
+import logging
+from scipy.spatial import ConvexHull
+
+# Logger pour générer un fichier de log
+logger = logging.getLogger("")
+logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, format='%(levelname)s :: %(asctime)s :: %(message)s')
+
+
+"""
+Prend une liste de GeoJSON de type Point et retourne un GeoJSON de type Polygon représentant l'enveloppe convexe.
+"""
+def grahamScan(geojson_list):
+    
+    points = [feature["coordinates"] for feature in geojson_list if feature["type"] == "Point"]
+
+    if len(points) < 3:
+        return None
+
+    hull = ConvexHull(points)
+    hull_points = [points[i] for i in hull.vertices]
+    hull_points.append(hull_points[0])
+
+    convex_hull_geojson = {
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [hull_points]
+        },
+        "properties": {}
+    }
+
+    return convex_hull_geojson
 
 """
 {
@@ -17,7 +49,18 @@ import pandas as pd
     "plot": {
       "id": "Plot_ID",
       "area": "PlotArea",
-      "sub_plot": "SubPlot"
+      "sub_plot": "SubPlot",
+      "location": {
+        "type": "Feature",
+        "geometry": 
+        {
+          "type": "Polygon",
+          "coordinates": [
+            "Lon",
+            "Lat"
+          ]
+        } 
+      }
     },
     "tree": {
       "field_number": "TreeFieldNum",
@@ -115,6 +158,19 @@ def transformToJSON(df):
               }
           })
   
+
+  grouped_geometry = df.groupby("Plot").apply(lambda g: [
+    {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
+  ]).reset_index(name="geometry")
+
+
+  for _, row in grouped_geometry.iterrows():
+    convex_hull_geojson = grahamScan(row["geometry"])
+
+    for key, tree in trees.items():
+      if tree["properties"]["plot"]["id"] == row["Plot"]:
+        tree["properties"]["plot"]["location"] = convex_hull_geojson
+
   return trees
 
 
@@ -179,53 +235,52 @@ def transformToJSON2(df):
       tree_id = row["idTree"]
       
       if "Indet." not in row["Family"] and "Indet." not in row["Genus"] and "Indet." not in row["Species"]:
-          if tree_id not in trees:
-              trees[tree_id] = {
-                  "type": "Feature",
-                  "geometry": {
-                      "type": "Point",
-                      "coordinates": [row["Lon"], row["Lat"]]
-                  },
-                  "properties": {
-                      "forest": row["Forest"],
-                      "plot": {
-                          "id": row["Plot"],
-                          "area": row["PlotArea"],
-                          "sub_plot": row["SubPlot"]
-                      },
-                      "tree": {
-                          "field_number": row["TreeFieldNum"],
-                          "id": tree_id,
-                          "species": {
-                              "family": row["Family"],
-                              "genus": row["Genus"],
-                              "species": row["Species"],
-                              "source": row["BotaSource"],
-                              "certainty": row["BotaCertainty"] == "VRAI"
-                          },
-                          "vernacular": {
-                              "id": row["idVern"],
-                              "name": row["VernName"],
-                              "commercial_species": row["CommercialSp"] == "VRAI"
-                          }
-                      },
-                      "census": {
-                          "year": row["CensusYear"],
-                          "date": row["CensusDate"],
-                          "date_certainty": row["CensusDateCertainty"] == "VRAI"
-                      },
-                      "status": {
-                          "alive_code": row["CodeAlive"],
-                          "measurement_code": row["MeasCode"],
-                          "circumference": {
-                              "value": row["Circ"],
-                              "corrected_value": row["CircCorr"],
-                              "correction_code": row["CorrCode"]
-                          }
-                      }
-                  }
-              }
-              feature_collection["features"].append(trees[tree_id])
+        trees[tree_id] = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["Lon"], row["Lat"]]
+            },
+            "properties": {
+                "forest": row["Forest"],
+                "plot": {
+                    "id": row["Plot"],
+                    "area": row["PlotArea"],
+                    "sub_plot": row["SubPlot"]
+                },
+                "tree": {
+                    "field_number": row["TreeFieldNum"],
+                    "id": tree_id,
+                    "species": {
+                        "family": row["Family"],
+                        "genus": row["Genus"],
+                        "species": row["Species"],
+                        "source": row["BotaSource"],
+                        "certainty": row["BotaCertainty"] == "VRAI"
+                    },
+                    "vernacular": {
+                        "id": row["idVern"],
+                        "name": row["VernName"],
+                        "commercial_species": row["CommercialSp"] == "VRAI"
+                    }
+                },
+                "census": {
+                    "year": row["CensusYear"],
+                    "date": row["CensusDate"],
+                    "date_certainty": row["CensusDateCertainty"] == "VRAI"
+                },
+                "status": {
+                    "alive_code": row["CodeAlive"] == "VRAI",
+                    "measurement_code": row["MeasCode"],
+                    "circumference": {
+                        "value": row["Circ"],
+                        "corrected_value": row["CircCorr"],
+                        "correction_code": row["CorrCode"]
+                    }
+                }
+            }
+        }
+        feature_collection["features"].append(trees[tree_id])
   
   return feature_collection
 
@@ -271,40 +326,45 @@ def transformToJSON2(df):
 def transformToJSON3(df):
 
   feature_collection = {"type": "FeatureCollection", "features": []}
-  
+  trees = {}
+
   for _, row in df.iterrows():
-      feature = {
-          "type": "Feature",
-          "geometry": {
-              "type": "Point",
-              "coordinates": [row["Lon"], row["Lat"]]
-          },
-          "properties": {
-              "forest": row["Forest"],
-              "plot_id": row["Plot"],
-              "plot_area": row["PlotArea"],
-              "plot_sub_plot": row["SubPlot"],
-              "tree_field_number": row["TreeFieldNum"],
-              "tree_id": row["idTree"],
-              "tree_species_family": row["Family"],
-              "tree_species_genus": row["Genus"],
-              "tree_species_species": row["Species"],
-              "tree_species_source": row["BotaSource"],
-              "tree_species_certainty": row["BotaCertainty"] == "VRAI",
-              "tree_vernacular_id": row["idVern"],
-              "tree_vernacular_name": row["VernName"],
-              "tree_vernacular_commercial_species": row["CommercialSp"] == "VRAI",
-              "census_year": row["CensusYear"],
-              "census_date": row["CensusDate"],
-              "census_date_certainty": row["CensusDateCertainty"] == "VRAI",
-              "status_alive_code": row["CodeAlive"],
-              "status_measurement_code": row["MeasCode"],
-              "status_circumference_value": row["Circ"],
-              "status_circumference_corrected_value": row["CircCorr"],
-              "status_circumference_correction_code": row["CorrCode"]
-          }
-      }
-      feature_collection["features"].append(feature)
+      
+      tree_id = row["idTree"]
+      
+      if "Indet." not in row["Family"] and "Indet." not in row["Genus"] and "Indet." not in row["Species"]:
+        trees[tree_id] = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["Lon"], row["Lat"]]
+            },
+            "properties": {
+                "forest": row["Forest"],
+                "plot_id": row["Plot"],
+                "plot_area": row["PlotArea"],
+                "plot_sub_plot": row["SubPlot"],
+                "tree_field_number": row["TreeFieldNum"],
+                "tree_id": row["idTree"],
+                "tree_species_family": row["Family"],
+                "tree_species_genus": row["Genus"],
+                "tree_species_species": row["Species"],
+                "tree_species_source": row["BotaSource"],
+                "tree_species_certainty": row["BotaCertainty"] == "VRAI",
+                "tree_vernacular_id": row["idVern"],
+                "tree_vernacular_name": row["VernName"],
+                "tree_vernacular_commercial_species": row["CommercialSp"] == "VRAI",
+                "census_year": row["CensusYear"],
+                "census_date": row["CensusDate"],
+                "census_date_certainty": row["CensusDateCertainty"] == "VRAI",
+                "status_alive_code": row["CodeAlive"] == "VRAI",
+                "status_measurement_code": row["MeasCode"],
+                "status_circumference_value": row["Circ"],
+                "status_circumference_corrected_value": row["CircCorr"],
+                "status_circumference_correction_code": row["CorrCode"]
+            }
+        }
+        feature_collection["features"].append(trees[tree_id])
   
   return feature_collection
   
@@ -315,26 +375,26 @@ def transformToJSON3(df):
 """
 def insertData():
     try: 
-        print("Connecting to MongoDB...")
+        logger.info("Connecting to MongoDB...")
         mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/") # lien de la bd
         mongo_db = mongo_client["TER"] # nom de la bd
         mongo_col1 = mongo_db["forest1"]
         mongo_col2 = mongo_db["forest2"]
         mongo_col3 = mongo_db["forest3"]
     except Exception as e : 
-        print(f"Error while connecting to MongoDB: {e}")
+        logger.error(f"Error while connecting to MongoDB: {e}")
 
 
 
     csv_files = glob.glob("./DataForest/*.csv") 
-    print(f"CSV files : {csv_files}")
+    logger.info(f"CSV files : {csv_files}")
 
 
 
     # Dans le cas où les données sont répartis dans plusieurs fichiers CSV
     for file in csv_files :
 
-        print(f"Lecture du fichier CSV : {file}")
+        logger.info(f"Lecture du fichier CSV : {file}")
         df = pd.read_csv(file)
 
         firstTrees = transformToJSON(df)
@@ -345,9 +405,23 @@ def insertData():
             mongo_col1.insert_many(list(firstTrees.values()))
             mongo_col2.insert_one(secondTrees)
             mongo_col3.insert_one(thirdTrees)
-            print("Data inserted !")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            logger.info("Data inserted !")
         except Exception as e:
-            print(f"Error while inserting data: {e}")
+            logger.error(f"Error while inserting data: {e}")
 
 
 insertData()

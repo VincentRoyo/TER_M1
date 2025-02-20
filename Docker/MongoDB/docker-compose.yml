@@ -9,9 +9,14 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
-      - ./data/mongo_config:/data/configdb  # Sauvegarde de la configuration
+      - ./data/mongo_config:/data/configdb #A retirer je pense pas nécéssaire
     networks:
       - mongo_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
 
   mongo-express:
     image: mongo-express
@@ -27,18 +32,34 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     networks:
       - mongo_network
-      
+
   init-db:
     build:
-       context: ../Python
+       context: ../../
+       dockerfile: Python/DockerFiles/MongoDB/Dockerfile
     container_name: init_db_container
     volumes:
-      - ../Python:/app
+      - ./output:/app/output
     depends_on:
       - mongodb
     networks:
       - mongo_network
     restart: "no"
+
+
+  spring-boot-app:
+    build:
+      context: ../
+      dockerfile: API/Dockerfile
+    container_name: spring_boot_container
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - mongo_network
 
 networks:
   mongo_network:
