@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class Polygon {
     private String type;
-    private Double[][] coordinates;
+    private Double[][][] coordinates;
 }

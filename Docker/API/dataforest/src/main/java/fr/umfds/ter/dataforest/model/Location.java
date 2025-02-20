@@ -6,7 +6,5 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Data
 public class Location {
     private String type;
-
-    @Field("geometry")
-    private Polygon polygon;
+    private Polygon geometry;
 }

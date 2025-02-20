@@ -27,7 +27,7 @@ def grahamScan(geojson_list):
         "type": "Feature",
         "geometry": {
             "type": "Polygon",
-            "coordinates": hull_points
+            "coordinates": [hull_points]
         },
         "properties": {}
     }
@@ -68,7 +68,10 @@ def grahamScan(geojson_list):
         {
           "type": "Polygon",
           "coordinates": [
-            ["Lon","Lat"]
+            [
+              ["Lon","Lat"],
+              ["Lon","Lat"]
+            ]
           ]
         } 
       }
