@@ -61,6 +61,19 @@ services:
     networks:
       - mongo_network
 
+  frontend:
+    build:
+      context: ../
+      dockerfile: React/Dockerfile
+    container_name: react_frontend
+    restart: "no"
+    ports:
+      - "3000:80"
+    depends_on:
+      - spring-boot-app
+    networks:
+      - mongo_network
+
 networks:
   mongo_network:
     driver: bridge

@@ -8,7 +8,8 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 		scanBasePackages = {
 				"fr.umfds.ter.dataforest.controller",
 				"fr.umfds.ter.dataforest.model",
-				"fr.umfds.ter.dataforest.repository"
+				"fr.umfds.ter.dataforest.repository",
+				"fr.umfds.ter.dataforest.config"
 		}
 )
 @EnableMongoRepositories
