@@ -7,6 +7,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 public class Feature {
     private String type;
-    private Geometry geometry;
+    private Point geometry;
     private Properties properties;
 }

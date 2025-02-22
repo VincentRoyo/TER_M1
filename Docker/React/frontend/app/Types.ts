@@ -1,8 +1,8 @@
-import type {GeoJSON} from "geojson";
+import type {Feature, GeoJSON} from "geojson";
 
 export interface PlotLocation {
     plot_id: string;
-    location: GeoJSON
+    location: Feature
     sub_plots: SubPlot[]
 }
 
@@ -21,4 +21,15 @@ export interface MapGLProps {
     latitude?: number;
     zoom?: number;
     geoJsonData?: PlotLocation[];
+    treesJsonData?: GeoJSON[];
+}
+
+export interface TextMap {
+    name: string;
+    coordinates: [number, number];
+}
+
+export interface Locations {
+    plotLocation: PlotLocation[];
+    treesLocation: GeoJSON[];
 }

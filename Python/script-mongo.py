@@ -179,7 +179,7 @@ def transformToJSON(df):
     {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
   ]).reset_index(name="geometry")
 
-  grouped_sub_geometry = df.groupby("SubPlot").apply(lambda g: [
+  grouped_sub_geometry = df.groupby(["Plot", "SubPlot"]).apply(lambda g: [
     {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
   ]).reset_index(name="geometry")
 
@@ -195,13 +195,14 @@ def transformToJSON(df):
     convex_hull_geojson = grahamScan(row["geometry"])
 
     for key, tree in trees.items():
-      if tree["properties"]["plot"]["sub_plot"]["id"] == row["SubPlot"]:
-        tree["properties"]["plot"]["sub_plot"]["location"] = convex_hull_geojson
+      if tree["properties"]["plot"]["id"] == row["Plot"]:
+        if tree["properties"]["plot"]["sub_plot"]["id"] == row["SubPlot"]:
+          tree["properties"]["plot"]["sub_plot"]["location"] = convex_hull_geojson
 
   return trees
 
 
-"""
+""" TODO pas encore fait l'algo de graham pour cette structure
 {
   "type": "FeatureCollection",
   "features": [
@@ -216,7 +217,30 @@ def transformToJSON(df):
         "plot": {
           "id": "Plot_ID",
           "area": "PlotArea",
-          "sub_plot": "SubPlot"
+          "sub_plot": {
+            "id": "SubPlot",
+            "location": {
+              "type": "Feature",
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  ["Lon","Lat"]
+                ]
+              } 
+            }
+          },
+          "location": {
+            "type": "Feature",
+            "geometry": {
+              "type": "Polygon",
+              "coordinates": [
+                [
+                  ["Lon","Lat"],
+                  ["Lon","Lat"]
+                ]
+              ]
+            }
+          }
         },
         "tree": {
           "field_number": "TreeFieldNum",
@@ -326,7 +350,31 @@ def transformToJSON2(df):
         "forest": "Forest_Name",
         "plot_id": "Plot_ID",
         "plot_area": "PlotArea",
-        "plot_sub_plot": "SubPlot",
+        "plot_sub_plot_id": "SubPlot",
+        "plot_location": {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                ["Lon","Lat"],
+                ["Lon","Lat"]
+              ]
+            ]
+          }
+        },
+        plot_sub_plot_location: {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                ["Lon","Lat"],
+                ["Lon","Lat"]
+              ]
+            ]
+          }
+        },
         "tree_field_number": "TreeFieldNum",
         "tree_id": "idTree",
         "tree_species_family": "Family",
@@ -408,6 +456,11 @@ def insertData():
         mongo_col1 = mongo_db["forest1"]
         mongo_col2 = mongo_db["forest2"]
         mongo_col3 = mongo_db["forest3"]
+        
+        mongo_col1.delete_many({})
+        mongo_col2.delete_many({})
+        mongo_col3.delete_many({})
+        
     except Exception as e : 
         logger.error(f"Error while connecting to MongoDB: {e}")
 
@@ -415,6 +468,14 @@ def insertData():
 
     csv_files = glob.glob("./DataForest/*.csv") 
     logger.info(f"CSV files : {csv_files}")
+    
+    """Indication du type de certaines colonnes car certaines colonnes contiennes des valeurs mixes"""
+    data_type = {
+      2: float,
+      6: float,
+      7: float,
+      27: str
+    }
 
 
 
@@ -422,7 +483,11 @@ def insertData():
     for file in csv_files :
 
         logger.info(f"Lecture du fichier CSV : {file}")
-        df = pd.read_csv(file)
+        
+        try:
+            df = pd.read_csv(file, dtype=data_type, decimal=',')
+        except Exception as e:
+            logger.error(f"Erreur lors de la lecture du CSV : {e}")
 
         firstTrees = transformToJSON(df)
         secondTrees = transformToJSON2(df)
@@ -432,19 +497,6 @@ def insertData():
             mongo_col1.insert_many(list(firstTrees.values()))
             mongo_col2.insert_one(secondTrees)
             mongo_col3.insert_one(thirdTrees)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             logger.info("Data inserted !")
         except Exception as e:
