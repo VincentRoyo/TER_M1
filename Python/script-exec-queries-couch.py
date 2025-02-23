@@ -153,54 +153,56 @@ design_doc_forest2 = {
     "views": {
         "arbres_par_plot_sousplot": {
             "map": '''
-            function(doc) {
-                if (doc.features) {
-                    doc.features.forEach(function(feature) {
-                        emit({ plot: feature.properties.plot.id, sub_plot: feature.properties.plot.sub_plot }, feature.properties.tree.id);
-                    });
-                }
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.tree_id);
+                });
+              }
             }
             ''',
             "reduce": """
             function(keys, values, rereduce) {
                 if (rereduce) {
-                    // Concaténer et supprimer les doublons
-                    return Array.from(new Set(values.flat()));
+                    return values.reduce(function(a, b) {
+                        return a.concat(b);
+                    }, []);
                 } else {
-                    return Array.from(new Set(values));
+                    return values;
                 }
             }
             """
         },
         "especes_par_plot_sousplot": {
             "map": '''
-            function(doc) {
-                if (doc.features) {
-                    doc.features.forEach(function(feature) {
-                        emit({ plot: feature.properties.plot.id, sub_plot: feature.properties.plot.sub_plot }, feature.properties.tree.species.species);
-                    });
-                }
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.species.species);
+                });
+              }
             }
             ''',
             "reduce": """
-           function(keys, values, rereduce) {
+            function(keys, values, rereduce) {
                 if (rereduce) {
-                    // Concaténer et supprimer les doublons
-                    return Array.from(new Set(values.flat()));
+                    return values.reduce(function(a, b) {
+                        return a.concat(b);
+                    }, []);
                 } else {
-                    return Array.from(new Set(values));
+                    return values;
                 }
             }
             """
         },
         "especes_par_plot": {
             "map": '''
-            function(doc) {
-                if (doc.features) {
-                    doc.features.forEach(function(feature) {
-                        emit({ plot: feature.properties.plot.id }, feature.properties.tree.species.species);
-                    });
-                }
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit(doc.properties.plot.id, tree.properties.species.species);
+                });
+              }
             }
             ''',
             "reduce": """
@@ -216,28 +218,129 @@ design_doc_forest2 = {
         },
         "nb_especes_par_plot_sousplot": {
             "map": '''
-            function(doc) {
-               if (doc.features) {
-                    doc.features.forEach(function(feature) {
-                        emit({ plot: feature.properties.plot.id, sub_plot: feature.properties.plot.sub_plot }, 1);
-                    });
-                }
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.species.species);
+                });
+              }
             }
             ''',
-            "reduce": "_sum"
+            "reduce": """
+           function (keys, values, rereduce) {
+            var speciesSet = {};
+            values.forEach(function(value) {
+              if (!rereduce) {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              } else {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              }
+            });
+           return speciesSet.length;
+          }
+            """
         },
         "nb_especes_par_plot": {
             "map": '''
-            function(doc) {
-                if (doc.features) {
-                    doc.features.forEach(function(feature) {
-                        emit({ plot: feature.properties.plot.id }, 1);
-                    });
-                }
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit(doc.properties.plot.id, tree.properties.species.species);
+                });
+              }
             }
             ''',
-            "reduce": "_sum"
+            "reduce": """
+           function (keys, values, rereduce) {
+            var speciesSet = {};
+            values.forEach(function(value) {
+              if (!rereduce) {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              } else {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              }
+            });
+           return speciesSet.length;
+          }
+            """
+        },
+         "arbres_morts": {
+            "map": '''
+           function(doc) {
+            if (doc.features) {
+              doc.features.forEach(function(feature) {
+                feature.properties.trees.features.forEach(function(tree) {
+                    tree.properties.measurements.forEach(function(measurement) {
+                        var treeKey = tree.properties.tree_id;
+                        if (measurement.status.alive_code == 0) {
+                        emit(treeKey, {
+                            alive_code: measurement.status.alive_code,
+                            date: measurement.census.date }
+                        });
+                        }
+                      });
+                    });
+                  });
+                }
+            }
+            ''', 
+            "reduce": '''
+              function(keys, values, rereduce) {
+                if (rereduce) {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                } else {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                }
+              }
+            '''
+        },
+        "arbres_vivants": {
+            "map": '''
+           function(doc) {
+            if (doc.features) {
+              doc.features.forEach(function(feature) {
+                feature.properties.trees.features.forEach(function(tree) {
+                    tree.properties.measurements.forEach(function(measurement) {
+                        var treeKey = tree.properties.tree_id;
+                        if (measurement.status.alive_code == 1) {
+                        emit(treeKey, {
+                            alive_code: measurement.status.alive_code,
+                            date: measurement.census.date }
+                        });
+                        }
+                      });
+                    });
+                  });
+                }
+            }
+            ''', 
+            "reduce": '''
+              function(keys, values, rereduce) {
+                if (rereduce) {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                } else {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                }
+              }
+            '''
         }
+        
     }
 }
 
@@ -245,37 +348,33 @@ design_doc_forest3 = {
   "_id": "_design/forest3_views",
   "views": {
     "arbres_par_plot_sousplot": {
-      "map": """
-        function(doc) {
-          if (doc.features) {
-            doc.features.forEach(function(feature) {
-              emit(
-                { plot: feature.properties.plot_id, sub_plot: feature.properties.plot_sub_plot },
-                feature.properties.tree_id
-              );
+        "map": '''
+        function (doc) {
+          if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+            doc.properties.trees.features.forEach(function(tree) {
+               emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.tree_id);
             });
           }
         }
-      """,
-      "reduce": """
+        ''',
+        "reduce": """
         function(keys, values, rereduce) {
-          if (rereduce) {
-            return Array.from(new Set(values.flat()));
-          } else {
-            return Array.from(new Set(values));
-          }
+            if (rereduce) {
+                return values.reduce(function(a, b) {
+                    return a.concat(b);
+                }, []);
+            } else {
+                return Array.from(new Set(values));;
+            }
         }
-      """
+        """
     },
     "especes_par_plot_sousplot": {
       "map": """
-        function(doc) {
-          if (doc.features) {
-            doc.features.forEach(function(feature) {
-              emit(
-                { plot: feature.properties.plot_id, sub_plot: feature.properties.plot_sub_plot },
-                feature.properties.tree_species_species
-              );
+       function (doc) {
+          if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+            doc.properties.trees.features.forEach(function(tree) {
+              emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.tree_species_species);
             });
           }
         }
@@ -292,10 +391,10 @@ design_doc_forest3 = {
     },
     "especes_par_plot": {
       "map": """
-        function(doc) {
-          if (doc.features) {
-            doc.features.forEach(function(feature) {
-              emit({ plot: feature.properties.plot_id }, feature.properties.tree_species_species);
+         function (doc) {
+          if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+            doc.properties.trees.features.forEach(function(tree) {
+              emit(doc.properties.plot.id, tree.properties.tree_species_species);
             });
           }
         }
@@ -311,31 +410,124 @@ design_doc_forest3 = {
       """
     },
     "nb_especes_par_plot_sousplot": {
-      "map": """
-        function(doc) {
-          if (doc.features) {
-            doc.features.forEach(function(feature) {
-              emit(
-                { plot: feature.properties.plot_id, sub_plot: feature.properties.plot_sub_plot },
-                1
-              );
+       "map": '''
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.species.species);
+                });
+              }
+            }
+            ''',
+            "reduce": """
+           function (keys, values, rereduce) {
+            var speciesSet = {};
+            values.forEach(function(value) {
+              if (!rereduce) {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              } else {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              }
             });
+           return speciesSet.length;
           }
-        }
-      """,
-      "reduce": "_sum"
+            """
     },
     "nb_especes_par_plot": {
-      "map": """
-        function(doc) {
-          if (doc.features) {
-            doc.features.forEach(function(feature) {
-              emit({ plot: feature.properties.plot_id }, 1);
+      "map": '''
+            function (doc) {
+              if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                  emit(doc.properties.plot.id, tree.properties.tree_species_species);
+                });
+              }
+            }
+            ''',
+            "reduce": """
+           function (keys, values, rereduce) {
+            var speciesSet = {};
+            values.forEach(function(value) {
+              if (!rereduce) {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              } else {
+                value.forEach(function(species) {
+                  speciesSet[species] = true;
+                });
+              }
             });
+           return speciesSet.length;
           }
-        }
-      """,
-      "reduce": "_sum"
+            """
+    },
+    "arbres_vivants" : {
+         "map": '''
+           function(doc) {
+            if (doc.features) {
+              doc.features.forEach(function(feature) {
+                feature.properties.trees.features.forEach(function(tree) {
+                        var treeKey = tree.properties.tree_id;
+                        if (tree.status.alive_code == 1) {
+                        emit(treeKey, {
+                            alive_code: measurement.status.alive_code,
+                            date: measurement.census.date }
+                        }
+                      });
+                    });
+                  });
+                }
+            }
+            ''', 
+            "reduce": '''
+              function(keys, values, rereduce) {
+                if (rereduce) {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                } else {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                }
+              }
+            '''
+    }, 
+    "arbres_morts" : {
+         "map": '''
+           function(doc) {
+            if (doc.features) {
+              doc.features.forEach(function(feature) {
+                feature.properties.trees.features.forEach(function(tree) {
+                        var treeKey = tree.properties.tree_id;
+                        if (tree.status.alive_code == 0) {
+                        emit(treeKey, {
+                            alive_code: measurement.status.alive_code,
+                            date: measurement.census.date }
+                        }
+                      });
+                    });
+                  });
+                }
+            }
+            ''', 
+            "reduce": '''
+              function(keys, values, rereduce) {
+                if (rereduce) {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                } else {
+                  return values.reduce(function(a, b) {
+                    return a.date > b.date ? a : b; 
+                  });
+                }
+              }
+            '''
     }
   }
 }

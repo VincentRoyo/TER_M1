@@ -70,47 +70,59 @@ logger.info("")
 
 queries2 = {
     "arbres_par_plot_sousplot": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot": "$features.properties.plot.id", "sub_plot": "$features.properties.plot.sub_plot" }, "trees": { "$push": "$features.properties.tree.id" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "trees": { "$push": "$properties.trees.features.properties.tree_id" } } },
         { "$count": "total" }
     ]),
     
     "especes_par_plot_sousplot": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot": "$features.properties.plot.id", "sub_plot": "$features.properties.plot.sub_plot" }, "species": { "$addToSet": "$features.properties.tree.species.species" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$count": "total" }
     ]),
     
     "especes_par_plot": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": "$features.properties.plot.id", "species": { "$addToSet": "$features.properties.tree.species.species" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": "$properties.plot.id", "species": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$count": "total" }
     ]),
     
     "nb_especes_par_plot_sousplot": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot": "$features.properties.plot.id", "sub_plot": "$features.properties.plot.sub_plot" }, "species_count": { "$sum": 1 } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
         { "$count": "total" }
     ]),
     
     "nb_especes_par_plot": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": "$features.properties.plot.id", "species_count": { "$sum": 1 } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": "$properties.plot.id", "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
         { "$count": "total" }
     ]),
     
     "arbres_morts": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$sort": { "features.properties.census.date": -1 } },
-        { "$group": { "_id": "$features.properties.tree.id", "last_status": { "$first": "$features.properties.status.alive_code" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$unwind": "$properties.trees.features.properties.measurements" },
+        { "$sort": { "properties.trees.features.properties.measurements.census.date": -1 } },
+        { "$group": {
+            "_id": "$properties.trees.features.properties.tree_id",
+            "last_status": { "$first": "$properties.trees.features.properties.measurements.status.alive_code" },
+            }
+        },
         { "$match": { "last_status": False } },
         { "$count": "total" }
     ]),
     
     "arbres_vivants": lambda: collection2.aggregate([
-        { "$unwind": "$features" },
-        { "$sort": { "features.properties.census.date": -1 } },
-        { "$group": { "_id": "$features.properties.tree.id", "last_status": { "$first": "$features.properties.status.alive_code" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$unwind": "$properties.trees.features.properties.measurements" },
+        { "$sort": { "properties.trees.features.properties.measurements.census.date": -1 } },
+        { "$group": {
+            "_id": "$properties.trees.features.properties.tree_id",
+            "last_status": { "$first": "$properties.trees.features.properties.measurements.status.alive_code" },
+            }
+        },
         { "$match": { "last_status": True } },
         { "$count": "total" }
     ])
@@ -132,47 +144,55 @@ logger.info("")
 
 queries3 = {
     "arbres_par_plot_sousplot": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot_id": "$features.properties.plot_id", "plot_sub_plot": "$features.properties.plot_sub_plot" }, "trees": { "$push": "$features.properties.tree_id" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "trees": { "$addToSet": "$properties.trees.features.properties.tree_id" } } },
         { "$count": "total" }
     ]),
 
     "especes_par_plot_sousplot": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot_id": "$features.properties.plot_id", "plot_sub_plot": "$features.properties.plot_sub_plot" }, "species": { "$addToSet": "$features.properties.tree_species_species" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$count": "total" }
     ]),
 
     "especes_par_plot": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": "$features.properties.plot_id", "species": { "$addToSet": "$features.properties.tree_species_species" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": "$properties.plot.id", "species": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$count": "total" }
     ]),
 
     "nb_especes_par_plot_sousplot": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": { "plot_id": "$features.properties.plot_id", "plot_sub_plot": "$features.properties.plot_sub_plot" }, "species_count": { "$sum": 1 } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
         { "$count": "total" }
     ]),
 
     "nb_especes_par_plot": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$group": { "_id": "$features.properties.plot_id", "species_count": { "$sum": 1 } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": { "_id": "$properties.plot.id", "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
         { "$count": "total" }
     ]),
 
     "arbres_morts": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$sort": { "features.properties.census_date": -1 } },
-        { "$group": { "_id": "$features.properties.tree_id", "last_status": { "$first": "$features.properties.status_alive_code" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": {
+            "_id": "$properties.trees.features.properties.tree_id",
+            "last_status": { "$first": "$properties.trees.features.properties.status.alive_code" },
+            }
+        },
         { "$match": { "last_status": False } },
         { "$count": "total" }
     ]),
 
     "arbres_vivants": lambda: collection3.aggregate([
-        { "$unwind": "$features" },
-        { "$sort": { "features.properties.census_date": -1 } },
-        { "$group": { "_id": "$features.properties.tree_id", "last_status": { "$first": "$features.properties.status_alive_code" } } },
+        { "$unwind": "$properties.trees.features" },
+        { "$group": {
+            "_id": "$properties.trees.features.properties.tree_id",
+            "last_status": { "$first": "$properties.trees.features.properties.status.alive_code" },
+            }
+        },
         { "$match": { "last_status": True } },
         { "$count": "total" }
     ])

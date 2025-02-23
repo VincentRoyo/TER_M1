@@ -204,77 +204,87 @@ def transformToJSON(df):
 
 """ TODO pas encore fait l'algo de graham pour cette structure
 {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": ["Lon", "Lat"]
-      },
-      "properties": {
-        "forest": "Forest_Name",
-        "plot": {
-          "id": "Plot_ID",
-          "area": "PlotArea",
-          "sub_plot": {
-            "id": "SubPlot",
-            "location": {
-              "type": "Feature",
-              "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                  ["Lon","Lat"]
-                ]
-              } 
-            }
-          },
-          "location": {
-            "type": "Feature",
-            "geometry": {
-              "type": "Polygon",
-              "coordinates": [
-                [
-                  ["Lon","Lat"],
-                  ["Lon","Lat"]
-                ]
+  "type": "Feature",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        ["Lon", "Lat"],
+       ]
+    ]
+  },
+  "properties": {
+    "plot": {
+      "id": "Plot_ID",
+      "area": "PlotArea"
+    },
+    "sub_plots": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                ["LonSub", "LatSub"],
               ]
-            }
-          }
-        },
-        "tree": {
-          "field_number": "TreeFieldNum",
-          "id": "idTree",
-          "species": {
-            "family": "Family",
-            "genus": "Genus",
-            "species": "Species",
-            "source": "BotaSource",
-            "certainty": "BotaCertainty"
+            ]
           },
-          "vernacular": {
-            "id": "idVern",
-            "name": "VernName",
-            "commercial_species": "CommercialSp"
+          "properties": {
+            "id": "SubPlot_ID"
           }
-        },
-        "census": {
-          "year": "CensusYear",
-          "date": "CensusDate",
-          "date_certainty": "CensusDateCertainty"
-        },
-        "status": {
-          "alive_code": "CodeAlive",
-          "measurement_code": "MeasCode",
-          "circumference": {
-            "value": "Circ",
-            "corrected_value": "CircCorr",
-            "correction_code": "CorrCode"
+        }     
+      ]
+    },
+    "trees": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": ["LonTree1", "LatTree1"]
+          },
+          "properties": {
+            "tree_id": "idTree",
+            "field_number": "TreeFieldNum",
+            "sub_plot_id": "SubPlot_ID", 
+            "species": {
+              "family": "Family",
+              "genus": "Genus",
+              "species": "Species",
+              "source": "BotaSource",
+              "certainty": "BotaCertainty"
+            },
+            "vernacular": {
+              "id": "idVern",
+              "name": "VernName",
+              "commercial_species": "CommercialSp"
+            },
+            "measurements": [ 
+              { 
+              "census": { 
+                "year": "CensusYear", 
+                "date": "CensusDate", 
+                "date_certainty": "CensusDateCertainty" 
+              }, 
+              "status": { 
+                "alive_code": "CodeAlive", 
+                "measurement_code": "MeasCode",
+                "circumference": { 
+                  "value": "Circ", 
+                  "corrected_value": "CircCorr", 
+                  "correction_code": "CorrCode" 
+                } 
+              }
+            } 
+            ]
           }
-        }
-      }
+        }            
+      ]
     }
-  ]
+  }
 }
 """
 def transformToJSON2(df):
@@ -338,64 +348,73 @@ def transformToJSON2(df):
 
 """
 {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": ["Lon", "Lat"]
-      },
-      "properties": {
-        "forest": "Forest_Name",
-        "plot_id": "Plot_ID",
-        "plot_area": "PlotArea",
-        "plot_sub_plot_id": "SubPlot",
-        "plot_location": {
+  "type": "Feature",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        ["Lon", "Lat"],
+       ]
+    ]
+  },
+  "properties": {
+    "plot": {
+      "id": "Plot_ID",
+      "area": "PlotArea"
+    },
+    "sub_plots": {
+      "type": "FeatureCollection",
+      "features": [
+        {
           "type": "Feature",
           "geometry": {
             "type": "Polygon",
             "coordinates": [
               [
-                ["Lon","Lat"],
-                ["Lon","Lat"]
+                ["LonSub", "LatSub"],
               ]
             ]
+          },
+          "properties": {
+            "id": "SubPlot_ID"
           }
-        },
-        plot_sub_plot_location: {
+        }     
+      ]
+    },
+    "trees": {
+      "type": "FeatureCollection",
+      "features": [
+        {
           "type": "Feature",
           "geometry": {
-            "type": "Polygon",
-            "coordinates": [
-              [
-                ["Lon","Lat"],
-                ["Lon","Lat"]
-              ]
-            ]
+            "type": "Point",
+            "coordinates": ["LonTree1", "LatTree1"]
+          },
+          "properties": {
+            "tree_field_number": "TreeFieldNum",
+        	  "tree_id": "idTree",
+            "sub_plot_id": "SubPlot_ID", 
+        	  "tree_species_family": "Family",
+       	    "tree_species_genus": "Genus",
+       	    "tree_species_species": "Species",
+        	  "tree_species_source": "BotaSource",
+       	    "tree_species_certainty": "BotaCertainty",
+        	  "tree_vernacular_id": "idVern",
+        	  "tree_vernacular_name": "VernName",
+        	  "tree_vernacular_commercial_species": "CommercialSp",
+       	    "census_year": "CensusYear",
+       	    "census_date": "CensusDate",
+        	  "census_date_certainty": "CensusDateCertainty",
+        	  "status_alive_code": "CodeAlive",
+        	  "status_measurement_code": "MeasCode",
+        	  "status_circumference_value": "Circ",
+       	    "status_circumference_corrected_value": "CircCorr",
+       	    "status_circumference_correction_code": "CorrCode"
           }
-        },
-        "tree_field_number": "TreeFieldNum",
-        "tree_id": "idTree",
-        "tree_species_family": "Family",
-        "tree_species_genus": "Genus",
-        "tree_species_species": "Species",
-        "tree_species_source": "BotaSource",
-        "tree_species_certainty": "BotaCertainty",
-        "tree_vernacular_id": "idVern",
-        "tree_vernacular_name": "VernName",
-        "tree_vernacular_commercial_species": "CommercialSp",
-        "census_year": "CensusYear",
-        "census_date": "CensusDate",
-        "census_date_certainty": "CensusDateCertainty",
-        "status_alive_code": "CodeAlive",
-        "status_measurement_code": "MeasCode",
-        "status_circumference_value": "Circ",
-        "status_circumference_corrected_value": "CircCorr",
-        "status_circumference_correction_code": "CorrCode"
-      }
+        } 
+      ]
     }
-  ]
+  }            
 }
 """
 def transformToJSON3(df):
