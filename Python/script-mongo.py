@@ -412,123 +412,6 @@ def transformToJSON2(df):
                 })
 
    return plots
-    
-
-    
-
-def transformToJSON2OldNew(df):
-   plots = {}
-
-   for _, row in df.iterrows():
-      plot_id = row["Plot"]
-
-      if plot_id not in plots:
-        plots[plot_id] = {
-          "type": "Feature",
-          "properties": {
-              "plot": {
-                "id": row["Plot"],
-                "area": row["PlotArea"]
-              },
-              "sub_plots": {
-                "type": "FeatureCollection",
-                "features": []
-              },
-              "trees": {
-                "type": "FeatureCollection",
-                "features": []
-              }
-          }
-        }
-
-      # Si le plot ne conitent pas les données du sous plot de cette ligne alors on l'ajoute 
-      if not any(obj["properties"]["id"] == row["SubPlot"] for obj in plots[plot_id]["properties"]["sub_plots"]["features"]):
-         plots[plot_id]["properties"]["sub_plots"]["features"].append({
-            "type": "Feature",
-            "properties": {
-               "id": row["SubPlot"]
-            }
-         })
-      
-      # Si le plot ne contient pas les données de l'arbre de cette ligne alors on l'ajoute
-      if not any(obj["properties"]["tree_id"] == row["idTree"] for obj in plots[plot_id]["properties"]["trees"]["features"]):
-         plots[plot_id]["properties"]["trees"]["features"].append({
-            "type": "Feature",
-            "geometry": {
-               "type": "Point",
-               "coordinates": [row["Lon"], row["Lat"]]
-            },
-            "properties": {
-               "tree_id": row["idTree"],
-               "field_number": row["TreeFieldNum"],
-               "sub_plot_id": row["SubPlot"],
-               "species": {
-                  "source": row["BotaSource"],
-                  "certainty": row["BotaCertainty"] == "VRAI"
-               },
-               "vernacular": {
-                  "id": row["idVern"],
-                  "name": row["VernName"],
-                  "commercial_species": row["CommercialSp"] == "VRAI"
-               },
-              "measurements": []
-            }
-         })
-         # Ajout conditionnel pour les colonnes suceptibles d'avoir des valeurs indéterminées
-         for tree in plots[plot_id]["properties"]["trees"]["features"]:
-               if tree["properties"]["tree_id"] == row["idTree"]:
-                  if "Indet." not in row["Family"]:
-                     tree["properties"]["species"]["family"] = row["Family"]
-                  if "Indet." not in row["Genus"]:
-                     tree["properties"]["species"]["genus"] = row["Genus"]
-                  if "Indet." not in row["Species"]:
-                     tree["properties"]["species"]["species"] = row["Species"]
-
-      for tree in plots[plot_id]["properties"]["trees"]["features"]:
-         if tree["properties"]["tree_id"] == row["idTree"]:
-            tree["properties"]["measurements"].append({
-               "census": {
-                  "year": row["CensusYear"],
-                  "date": row["CensusDate"],
-                  "date_certainty": row["CensusDateCertainty"] == "VRAI"
-                },
-                "status": {
-                   "alive_code": row["CodeAlive"] == "VRAI",
-                   "measurement_code": row["MeasCode"],
-                   "circumference": {
-                      "value": row["Circ"],
-                      "corrected_value": row["CircCorr"],
-                      "correction_code": row["CorrCode"]
-                    }
-                }
-              })
-
-   grouped_geometry = df.groupby("Plot").apply(lambda g: [
-       {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
-       ]).reset_index(name="geometry")
-   
-   grouped_sub_geometry = df.groupby(["Plot", "SubPlot"]).apply(lambda g: [
-      {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
-      ]).reset_index(name="geometry")
-   
-   for _, row in grouped_geometry.iterrows():
-    convex_hull_geojson = grahamScan(row["geometry"])
-
-    for _, plot in plots.items():
-       if plot["properties"]["plot"]["id"] == row["Plot"]:
-          plot["geometry"] = convex_hull_geojson["geometry"]
-
-   for _, row in grouped_sub_geometry.iterrows():
-    convex_hull_geojson = grahamScan(row["geometry"])
-
-    for _, plot in plots.items():
-       if plot["properties"]["plot"]["id"] == row["Plot"]:
-          for sub_plot in plot["properties"]["sub_plots"]["features"]:
-             if sub_plot["properties"]["id"] == row["SubPlot"]:
-                sub_plot["geometry"] = convex_hull_geojson["geometry"]
-
-   return plots
-
 
 
 """
@@ -603,49 +486,108 @@ def transformToJSON2OldNew(df):
 }
 """
 def transformToJSON3(df):
+  plots = {}
 
-  feature_collection = {"type": "FeatureCollection", "features": []}
-  trees = {}
+  grouped_data = df.groupby(["Plot"])
 
-  for _, row in df.iterrows():
-      
-      tree_id = row["idTree"]
-      
-      if "Indet." not in row["Family"] and "Indet." not in row["Genus"] and "Indet." not in row["Species"]:
-        trees[tree_id] = {
+  grouped_geometry = df.groupby("Plot").apply(lambda g: [
+      {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
+  ]).reset_index(name="geometry")
+
+  grouped_sub_geometry = df.groupby(["Plot", "SubPlot"]).apply(lambda g: [
+      {"type": "Point", "coordinates": [row["Lon"], row["Lat"]]} for _, row in g.iterrows()
+  ]).reset_index(name="geometry")
+
+  for plot, group in grouped_data:
+      plot_id = plot[0]
+
+      geo_group = grouped_geometry[grouped_geometry["Plot"] == plot_id]
+      convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+
+      plots[plot] = {
+          "type": "Feature",
+          "geometry": convex_hull_geojson["geometry"],
+          "properties": {
+              "plot": {
+                  "id": plot_id,
+                  "area": group["PlotArea"].iloc[0]
+              },
+              "sub_plots": {
+                  "type": "FeatureCollection",
+                  "features": []
+              },
+              "trees": {
+                  "type": "FeatureCollection",
+                  "features": []
+              }
+          }
+      }
+
+      sub_plots_set = set()
+      for _, row in group.iterrows():
+        sub_plot_id = row["SubPlot"]
+        
+        # Ajout du sous-plot
+        if sub_plot_id not in sub_plots_set:
+            sub_plots_set.add(sub_plot_id)
+            
+            geo_group = grouped_sub_geometry[
+                (grouped_sub_geometry["Plot"] == plot_id) & (grouped_sub_geometry["SubPlot"] == sub_plot_id)
+            ]
+            
+            convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+            
+            plots[plot]["properties"]["sub_plots"]["features"].append({
+                "type": "Feature",
+                "geometry": convex_hull_geojson["geometry"],
+                "properties": {
+                    "id": sub_plot_id
+                }
+            })
+
+        tree_id = row["idTree"]
+
+        species = {
+            "source": row["BotaSource"],
+            "certainty": row["BotaCertainty"] == "VRAI"
+        }
+
+        if "Indet." not in row["Family"]:
+            species["family"] = row["Family"]
+        if "Indet." not in row["Genus"]:
+            species["genus"] = row["Genus"]
+        if "Indet." not in row["Species"]:
+            species["species"] = row["Species"]
+
+        plots[plot]["properties"]["trees"]["features"].append({
             "type": "Feature",
             "geometry": {
                 "type": "Point",
                 "coordinates": [row["Lon"], row["Lat"]]
             },
             "properties": {
-                "forest": row["Forest"],
-                "plot_id": row["Plot"],
-                "plot_area": row["PlotArea"],
-                "plot_sub_plot": row["SubPlot"],
                 "tree_field_number": row["TreeFieldNum"],
-                "tree_id": row["idTree"],
-                "tree_species_family": row["Family"],
-                "tree_species_genus": row["Genus"],
-                "tree_species_species": row["Species"],
-                "tree_species_source": row["BotaSource"],
-                "tree_species_certainty": row["BotaCertainty"] == "VRAI",
+                "tree_id": tree_id,
+                "sub_plot_id": row["SubPlot"],
+                "tree_species_family": species.get("family", ""),
+                "tree_species_genus": species.get("genus", ""),
+                "tree_species_species": species.get("species", ""),
+                "tree_species_source": species.get("source", ""),
+                "tree_species_certainty": species.get("certainty", False),
                 "tree_vernacular_id": row["idVern"],
                 "tree_vernacular_name": row["VernName"],
                 "tree_vernacular_commercial_species": row["CommercialSp"] == "VRAI",
                 "census_year": row["CensusYear"],
                 "census_date": row["CensusDate"],
-                "census_date_certainty": row["CensusDateCertainty"] == "VRAI",
                 "status_alive_code": row["CodeAlive"] == "VRAI",
                 "status_measurement_code": row["MeasCode"],
                 "status_circumference_value": row["Circ"],
                 "status_circumference_corrected_value": row["CircCorr"],
                 "status_circumference_correction_code": row["CorrCode"]
             }
-        }
-        feature_collection["features"].append(trees[tree_id])
-  
-  return feature_collection
+        })
+
+  return plots
   
 
 
@@ -717,6 +659,7 @@ def insertData():
 
         start_time_mappage = time.time()
 
+
         try:
            thirdTrees = transformToJSON3(df)
         except Exception as e:
@@ -737,7 +680,8 @@ def insertData():
             mongo_col2.insert_many(list(secondTrees.values()))
             logger.info(f"{len(secondTrees)} documents insérés pour la deuxième collection")
 
-            mongo_col3.insert_one(thirdTrees)
+            mongo_col3.insert_many(list(thirdTrees.values()))
+            logger.info(f"{len(thirdTrees)} documents insérés pour la troisième collection")
 
             end_time_insert = time.time()
 
