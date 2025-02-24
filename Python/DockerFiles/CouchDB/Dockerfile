@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Installer couch
-RUN pip install couchdb3 pandas
+RUN pip install couchdb3 pandas scipy
 
 # Copier les scripts Python dans le conteneur
 COPY ../../Python/script-couch.py /app/script-couch.py

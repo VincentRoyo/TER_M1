@@ -150,7 +150,7 @@ design_doc_forest1 = {
 
 design_doc_forest2 = {
  "_id": "_design/forest2_views",
-    "views": {
+  "views": {
         "arbres_par_plot_sousplot": {
             "map": '''
             function (doc) {
@@ -230,15 +230,9 @@ design_doc_forest2 = {
            function (keys, values, rereduce) {
             var speciesSet = {};
             values.forEach(function(value) {
-              if (!rereduce) {
                 value.forEach(function(species) {
                   speciesSet[species] = true;
                 });
-              } else {
-                value.forEach(function(species) {
-                  speciesSet[species] = true;
-                });
-              }
             });
            return speciesSet.length;
           }
@@ -258,86 +252,31 @@ design_doc_forest2 = {
            function (keys, values, rereduce) {
             var speciesSet = {};
             values.forEach(function(value) {
-              if (!rereduce) {
                 value.forEach(function(species) {
                   speciesSet[species] = true;
                 });
-              } else {
-                value.forEach(function(species) {
-                  speciesSet[species] = true;
-                });
-              }
             });
            return speciesSet.length;
           }
             """
         },
-         "arbres_morts": {
-            "map": '''
-           function(doc) {
-            if (doc.features) {
-              doc.features.forEach(function(feature) {
-                feature.properties.trees.features.forEach(function(tree) {
-                    tree.properties.measurements.forEach(function(measurement) {
-                        var treeKey = tree.properties.tree_id;
-                        if (measurement.status.alive_code == 0) {
-                        emit(treeKey, {
-                            alive_code: measurement.status.alive_code,
-                            date: measurement.census.date }
-                        });
-                        }
-                      });
-                    });
-                  });
-                }
-            }
-            ''', 
-            "reduce": '''
-              function(keys, values, rereduce) {
-                if (rereduce) {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                } else {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                }
-              }
-            '''
-        },
         "arbres_vivants": {
             "map": '''
            function(doc) {
-            if (doc.features) {
-              doc.features.forEach(function(feature) {
-                feature.properties.trees.features.forEach(function(tree) {
-                    tree.properties.measurements.forEach(function(measurement) {
-                        var treeKey = tree.properties.tree_id;
-                        if (measurement.status.alive_code == 1) {
-                        emit(treeKey, {
-                            alive_code: measurement.status.alive_code,
-                            date: measurement.census.date }
+            if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
+                      var latest = tree.properties.measurements.reduce(function(a, b) {
+                          return a.census.date > b.census.date ? a : b;
+                      });
+                        if (latest.status.alive_code === true) {
+                        emit(tree.properties.tree_id, {
+                            alive_code: latest.status.alive_code,
+                            date: latest.census.date 
                         });
                         }
-                      });
                     });
-                  });
                 }
             }
-            ''', 
-            "reduce": '''
-              function(keys, values, rereduce) {
-                if (rereduce) {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                } else {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                }
-              }
             '''
         }
         
@@ -414,7 +353,7 @@ design_doc_forest3 = {
             function (doc) {
               if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
                 doc.properties.trees.features.forEach(function(tree) {
-                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.species.species);
+                  emit([doc.properties.plot.id, tree.properties.sub_plot_id], tree.properties.tree_species_species);
                 });
               }
             }
@@ -423,15 +362,9 @@ design_doc_forest3 = {
            function (keys, values, rereduce) {
             var speciesSet = {};
             values.forEach(function(value) {
-              if (!rereduce) {
                 value.forEach(function(species) {
                   speciesSet[species] = true;
                 });
-              } else {
-                value.forEach(function(species) {
-                  speciesSet[species] = true;
-                });
-              }
             });
            return speciesSet.length;
           }
@@ -450,16 +383,10 @@ design_doc_forest3 = {
             "reduce": """
            function (keys, values, rereduce) {
             var speciesSet = {};
-            values.forEach(function(value) {
-              if (!rereduce) {
+           values.forEach(function(value) {
                 value.forEach(function(species) {
                   speciesSet[species] = true;
                 });
-              } else {
-                value.forEach(function(species) {
-                  speciesSet[species] = true;
-                });
-              }
             });
            return speciesSet.length;
           }
@@ -468,64 +395,27 @@ design_doc_forest3 = {
     "arbres_vivants" : {
          "map": '''
            function(doc) {
-            if (doc.features) {
-              doc.features.forEach(function(feature) {
-                feature.properties.trees.features.forEach(function(tree) {
+            if (doc.type === "Feature" && doc.properties && doc.properties.trees) {
+                doc.properties.trees.features.forEach(function(tree) {
                         var treeKey = tree.properties.tree_id;
-                        if (tree.status.alive_code == 1) {
+                        if (tree.properties.status_alive_code === false) {
                         emit(treeKey, {
-                            alive_code: measurement.status.alive_code,
-                            date: measurement.census.date }
-                        }
+                            alive_code: tree.properties.status_alive_code,
+                            date: tree.properties.census_date 
                       });
+                      }
                     });
-                  });
                 }
             }
             ''', 
             "reduce": '''
               function(keys, values, rereduce) {
-                if (rereduce) {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                } else {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
+                if (values.length === 0) {
+                  return null;
                 }
-              }
-            '''
-    }, 
-    "arbres_morts" : {
-         "map": '''
-           function(doc) {
-            if (doc.features) {
-              doc.features.forEach(function(feature) {
-                feature.properties.trees.features.forEach(function(tree) {
-                        var treeKey = tree.properties.tree_id;
-                        if (tree.status.alive_code == 0) {
-                        emit(treeKey, {
-                            alive_code: measurement.status.alive_code,
-                            date: measurement.census.date }
-                        }
-                      });
-                    });
-                  });
-                }
-            }
-            ''', 
-            "reduce": '''
-              function(keys, values, rereduce) {
-                if (rereduce) {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                } else {
-                  return values.reduce(function(a, b) {
-                    return a.date > b.date ? a : b; 
-                  });
-                }
+                return values.reduce(function(a, b) {
+                  return (a.date && b.date && a.date > b.date) ? a : b;
+                });
               }
             '''
     }
@@ -538,10 +428,19 @@ if "_design/forest_views" not in databases["forest1"]:
     databases["forest1"].save(design_doc_forest1)
 
 if "_design/forest2_views" not in databases["forest2"]:
-    databases["forest2"].save(design_doc_forest2)
+    try:
+      databases["forest2"].save(design_doc_forest2)
+      logging.info("Design document forest2_views ajouté avec succès.")
+    except Exception as e:
+      logging.error(f"Erreur lors de l'ajout du design document forest2_views : {e}")
+
 
 if "_design/forest3_views" not in databases["forest3"]:
-    databases["forest3"].save(design_doc_forest3)    
+    try:
+      databases["forest3"].save(design_doc_forest3)   
+      logging.info("Design document forest3_views ajouté avec succès.")
+    except Exception as e:   
+      logging.error(f"Erreur lors de l'ajout du design document forest3_views : {e}")
 
 # Fonction d'exécution des vues
 def execute_view_with_requests(db_name, design_doc,view_name):
@@ -557,8 +456,8 @@ def execute_view_with_requests(db_name, design_doc,view_name):
         
         reduce_param = "&reduce=true" if "reduce" in design_doc_queries["views"].get(view_name, {}) else ""
         group_param = "group=true" if "reduce" in design_doc_queries["views"].get(view_name, {}) else ""
-        stale_param="&stale=ok"
-        url = f"{client.url}/{db_name}/_design/{design_doc}/_view/{view_name}?{group_param}{reduce_param}"
+        stale_param="&stable=true&update=false"
+        url = f"{client.url}/{db_name}/_design/{design_doc}/_view/{view_name}?{group_param}{reduce_param}{stale_param}"
         
         response = requests.get(url, auth=('admin', 'password'))
         
@@ -567,7 +466,7 @@ def execute_view_with_requests(db_name, design_doc,view_name):
             return response.json()["rows"]
         else:
             print(f"Error {response.status_code}: {response.text}")
-            return []
+            return [] 
     except Exception as e:
         logging.error(f"Error while executing query {view_name}: {e}")
         return []
@@ -588,6 +487,8 @@ for name in queries_forest1:
 
 logger.info("")
 
+time.sleep(8)
+
 for name in queries_forest2:
     start_time = time.time()
     result = execute_view_with_requests("forest2", "forest2_views",name)
@@ -597,6 +498,8 @@ for name in queries_forest2:
     print(f"forest2 - {name}: {duration} ms :: Nombre de données récupérées: {len(result)}")    
 
 logger.info("")
+
+time.sleep(8)
 
 for name in queries_forest3:
     start_time = time.time()

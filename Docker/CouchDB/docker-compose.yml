@@ -1,29 +1,30 @@
-services:
-  couchdb:
-    image: couchdb:3
-    container_name: couchdb_container
-    restart: always
-    ports:
-      - "5984:5984"
-    environment:
-      COUCHDB_USER: admin
-      COUCHDB_PASSWORD: password
-    volumes:
-      - ./local.ini:/opt/couchdb/etc/local.ini  
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5984"]
-      interval: 5s
-      retries: 5
-      start_period: 5s
+  services:
+    couchdb:
+      image: couchdb:3
+      container_name: couchdb_container
+      restart: always
+      ports:
+        - "5984:5984"
+      environment:
+        COUCHDB_USER: admin
+        COUCHDB_PASSWORD: password
+        COUCHDB_QUERY_SERVER_JAVASCRIPT_STACK: 1345217728
+      volumes:
+        - ./local.ini:/opt/couchdb/etc/local.ini  
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5984"]
+        interval: 5s
+        retries: 5
+        start_period: 5s
 
-  init-db:
-    build:
-       context: ../../
-       dockerfile: Python/DockerFiles/CouchDB/Dockerfile
-    container_name: init_db_container
-    volumes:
-      - ./output:/app/output
-    depends_on:
-      couchdb:
-        condition: service_healthy
-    restart: "no"
+    init-db:
+      build:
+        context: ../../
+        dockerfile: Python/DockerFiles/CouchDB/Dockerfile
+      container_name: init_db_container
+      volumes:
+        - ./output:/app/output
+      depends_on:
+        couchdb:
+          condition: service_healthy
+      restart: "no"

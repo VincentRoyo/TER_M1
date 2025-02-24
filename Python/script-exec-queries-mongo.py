@@ -30,12 +30,20 @@ queries = {
     ]),
     
     "nb_especes_par_plot_sousplot": lambda: collection.aggregate([
-        { "$group": { "_id": { "plot": "$properties.plot.id", "sub_plot": "$properties.plot.sub_plot" }, "species_count": { "$sum": 1 } }},
+        { "$group": { "_id": {"plot": "$properties.plot.id", "sub_plot": "$properties.plot.sub_plot.id" },"species_set": { "$addToSet": "$properties.tree.species.species" }}},
+        {"$project": {"_id": 0, "plot_id": "$_id.plot", "sub_plot": "$_id.sub_plot","species_count": { "$size": "$species_set" }}},
         { "$count": "total" }
     ]),
     
     "nb_especes_par_plot": lambda: collection.aggregate([
-        { "$group": { "_id": { "plot": "$properties.plot.id" }, "species_count": { "$sum": 1 } }},
+        { "$group": { "_id": "$properties.plot.id", "species_set": {  "$addToSet": "$properties.tree.species.species" }}},
+        { "$project": { "_id": 0, "plot_id": "$_id", "species_count": { "$size": "$species_set" }}},
+        { "$count": "total" }
+    ]),
+
+    "plots_sousplots_location": lambda: collection.aggregate([
+        { "$group": { "_id": "$properties.plot.id", "location": { "$first": '$properties.plot.location' }, "sub_plots": { "$addToSet": '$properties.plot.sub_plot' } } },
+        { "$project": { '_id': 0, 'plot_id': '$_id', 'location': 1, 'sub_plots': 1 } },
         { "$count": "total" }
     ]),
     
@@ -89,15 +97,21 @@ queries2 = {
     
     "nb_especes_par_plot_sousplot": lambda: collection2.aggregate([
         { "$unwind": "$properties.trees.features" },
-        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$group": { "_id": { "plot" : "$properties.plot.id", "sub_plot" : "$properties.trees.features.properties.sub_plot_id"  }, "species_set": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
         { "$count": "total" }
     ]),
     
     "nb_especes_par_plot": lambda: collection2.aggregate([
         { "$unwind": "$properties.trees.features" },
-        { "$group": { "_id": "$properties.plot.id", "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
+        { "$group": { "_id": "$properties.plot.id", "species_set": { "$addToSet": "$properties.trees.features.properties.species.species" } } },
         { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
+        { "$count": "total" }
+    ]),
+
+    "plots_sousplots_location": lambda: collection.aggregate([
+        { "$group": { "_id": "$properties.plot.id", "location": { "$first": '$geometry.coordinates' }, "sub_plots": { "$addToSet": '$properties.sub_plots' } } },
+        { "$project": { '_id': 0, 'plot_id': '$_id', 'location': 1, 'sub_plots': 1 } },
         { "$count": "total" }
     ]),
     
@@ -172,6 +186,12 @@ queries3 = {
         { "$unwind": "$properties.trees.features" },
         { "$group": { "_id": "$properties.plot.id", "species_set": { "$addToSet": "$properties.trees.features.properties.tree_species_species" } } },
         { "$project": { "_id": 1, "species_count": { "$size": "$species_set" } } },
+        { "$count": "total" }
+    ]),
+
+    "plots_sousplots_location": lambda: collection.aggregate([
+        { "$group": { "_id": "$properties.plot.id", "location": { "$first": '$geometry.coordinates' }, "sub_plots": { "$addToSet": '$properties.sub_plots' } } },
+        { "$project": { '_id': 0, 'plot_id': '$_id', 'location': 1, 'sub_plots': 1 } },
         { "$count": "total" }
     ]),
 
