@@ -1,22 +1,34 @@
-import React from "react";
+import React, {useEffect} from "react";
 import DeckGL, {ZoomWidget} from "@deck.gl/react";
 import {GeoJsonLayer, TextLayer} from "@deck.gl/layers";
 import {Map} from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type {MapGLProps, TextMap} from "~/Types";
-import type {GeoJSON} from "geojson";
+import type {GeoJSON, MapGLProps, TextMap} from "~/Types";
 import {Layer} from "@deck.gl/core";
 import {getCenter} from "~/utils";
 
 export default function MapGL({
-                                  longitude = -53.97510147,
-                                  latitude = 5.486270905,
-                                  zoom = 10,
+                                  mapZoom,
                                   geoJsonData,
                                   treesJsonData,
                               }: MapGLProps): React.ReactElement {
 
 
+    const [intervalBearing, setIntervalBearing] = React.useState<NodeJS.Timeout>();
+    const [bearing, setBearing] = React.useState<number>(0);
+
+    useEffect(() => {
+
+        if (mapZoom.zoom === 17) {
+            const interval = setInterval(() => {
+                setBearing((prevState) =>(prevState+1)%360)
+            }, 50)
+
+            setIntervalBearing(interval);
+            return () => clearInterval(interval);
+        }
+
+    }, [mapZoom])
 
     function getLayers(): Layer[] {
         const layers: Layer[] = [];
@@ -28,9 +40,10 @@ export default function MapGL({
                 type: "FeatureCollection",
                 features: geoJsonData.map(plot => {
                     if (plot.location.geometry.type === "Polygon") {
+                        const coords: number[] = getCenter(plot.location.geometry.coordinates[0]).coordinates;
                         textData.push({
                             name: plot.plot_id.normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
-                            coordinates: getCenter(plot.location.geometry.coordinates[0])
+                            coordinates: [coords[0], coords[1]]
                         });
                     }
                     return plot.location;
@@ -89,23 +102,30 @@ export default function MapGL({
         return layers;
     }
 
+    function handleViewStateChange() {
+        setBearing(0);
+        clearInterval(intervalBearing);
+    }
+
 
 
     return (
         <DeckGL
             initialViewState={{
-                longitude,
-                latitude,
-                zoom
+                longitude: mapZoom.coordinates.coordinates[0],
+                latitude: mapZoom.coordinates.coordinates[1],
+                zoom: mapZoom.zoom,
+                pitch: mapZoom.pitch,
+                bearing
             }}
             controller
             layers={
                 getLayers()
             }
+            onViewStateChange={handleViewStateChange}
         >
 
-            <Map reuseMaps mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json"/>
-            <ZoomWidget id="zoom-widget" placement="top-left"/>
+            <Map reuseMaps mapStyle="https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" />
         </DeckGL>
     )
 }

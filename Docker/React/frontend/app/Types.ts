@@ -1,14 +1,48 @@
-import type {Feature, GeoJSON} from "geojson";
+import type {
+    GeoJsonObject,
+    GeoJsonProperties,
+    GeometryCollection,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point
+} from "geojson";
+
+
+export type Geometry = Point | MultiPoint | LineString | MultiLineString | Polygon | MultiPolygon | GeometryCollection;
+
+export interface FeatureCollection<G extends Geometry | null = Geometry, P = GeoJsonProperties> extends GeoJsonObject {
+    type: "FeatureCollection";
+    features: Array<Feature<G, P>>;
+}
+
+export type GeoJSON<G extends Geometry | null = Geometry, P = GeoJsonProperties> =
+    | G
+    | Feature<G, P>
+    | FeatureCollection<G, P>;
+
+export interface Polygon extends GeoJsonObject {
+    type: "Polygon";
+    coordinates: Point[][];
+}
+
+export interface Feature<G extends Geometry | null = Geometry, P = GeoJsonProperties> extends GeoJsonObject {
+    type: "Feature";
+    geometry: G;
+    id?: string | number | undefined;
+    properties: P;
+}
 
 export interface PlotLocation {
     plot_id: string;
-    location: Feature
+    location: Feature<Polygon>
     sub_plots: SubPlot[]
 }
 
 export interface SubPlot {
     idSubPlot: number;
-    location: GeoJSON
+    location: Feature<Polygon>
 }
 
 export interface ApiResponse<T> {
@@ -17,11 +51,9 @@ export interface ApiResponse<T> {
 }
 
 export interface MapGLProps {
-    longitude?: number;
-    latitude?: number;
-    zoom?: number;
+    mapZoom: MapZoom;
     geoJsonData?: PlotLocation[];
-    treesJsonData?: GeoJSON[];
+    treesJsonData?: Feature[];
 }
 
 export interface TextMap {
@@ -31,5 +63,23 @@ export interface TextMap {
 
 export interface Locations {
     plotLocation: PlotLocation[];
-    treesLocation: GeoJSON[];
+    treesLocation: Feature<Point>[];
+}
+
+export interface SideBarProps {
+    elements: string[],
+    handleClickPlot: (plotName: string) => void
+}
+
+export interface MapZoom {
+    zoom: number,
+    pitch: number,
+    coordinates: Point
+}
+
+export enum HttpMethods {
+    GET = 'GET',
+    POST = 'POST',
+    PATCH = 'PATCH',
+    DELETE = 'DELETE',
 }

@@ -150,7 +150,71 @@ queries = {
         },
         { "$sort": { "plot_id": 1, "sub_plot_id": 1, "species": 1 } },
         { "$count": "total" }
-    ], allowDiskUse=True)
+    ], allowDiskUse=True),
+
+    "indice_de_shannon": lambda: collection.aggregate([
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$properties.plot.id",
+                "sub_plot_id": "$properties.plot.sub_plot.id",
+                "species": "$properties.tree.species.species"
+            },
+            "count_species": { "$sum": 1 }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$_id.plot_id",
+                "sub_plot_id": "$_id.sub_plot_id"
+            },
+            "species_counts": {
+                "$push": {
+                "species": "$_id.species",
+                "count": "$count_species"
+                }
+            },
+            "total_trees": { "$sum": "$count_species" }
+            }
+        },
+        { "$unwind": "$species_counts" },
+        {
+            "$project": {
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "species": "$species_counts.species",
+            "p_i": { "$divide": ["$species_counts.count", "$total_trees"] }
+            }
+        },
+        {
+            "$project": {
+            "plot_id": 1,
+            "sub_plot_id": 1,
+            "species": 1,
+            "shannon_term": { "$multiply": ["$p_i", { "$ln": "$p_i" }] }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$plot_id",
+                "sub_plot_id": "$sub_plot_id"
+            },
+            "shannon_index": { "$sum": "$shannon_term" }
+            }
+        },
+        {
+            "$project": {
+            "_id": 0,
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "shannon_index": { "$multiply": ["$shannon_index", -1] }
+            }
+        },
+        { "$sort": { "plot_id": 1, "sub_plot_id": 1 } },
+        { "$count": "total" }
+    ])
 }
 
 logger.info("RESULTAT PREMIERE STRUCTURE")
@@ -325,7 +389,72 @@ queries2 = {
         },
         { "$sort": { "plot_id": 1, "sub_plot_id": 1, "species": 1 } },
         { "$count": "total" }
-    ], allowDiskUse=True)
+    ], allowDiskUse=True),
+
+    "indice_de_shannon": lambda: collection2.aggregate([
+        { "$unwind": "$properties.trees.features" },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$properties.plot.id",
+                "sub_plot_id": "$properties.trees.features.properties.sub_plot_id",
+                "species": "$properties.trees.features.properties.species.species"
+            },
+            "count_species": { "$sum": 1 }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$_id.plot_id",
+                "sub_plot_id": "$_id.sub_plot_id"
+            },
+            "species_counts": {
+                "$push": {
+                "species": "$_id.species",
+                "count": "$count_species"
+                }
+            },
+            "total_trees": { "$sum": "$count_species" }
+            }
+        },
+        { "$unwind": "$species_counts" },
+        {
+            "$project": {
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "species": "$species_counts.species",
+            "p_i": { "$divide": ["$species_counts.count", "$total_trees"] }
+            }
+        },
+        {
+            "$project": {
+            "plot_id": 1,
+            "sub_plot_id": 1,
+            "species": 1,
+            "shannon_term": { "$multiply": ["$p_i", { "$ln": "$p_i" }] }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$plot_id",
+                "sub_plot_id": "$sub_plot_id"
+            },
+            "shannon_index": { "$sum": "$shannon_term" }
+            }
+        },
+        {
+            "$project": {
+            "_id": 0,
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "shannon_index": { "$multiply": ["$shannon_index", -1] }
+            }
+        },
+        { "$sort": { "plot_id": 1, "sub_plot_id": 1 } },
+        { "$count": "total" }
+    ])
 }
 
 logger.info("RESULTAT DEUXIEME STRUCTURE")
@@ -500,7 +629,82 @@ queries3 = {
         },
         { "$sort": { "plot_id": 1, "sub_plot_id": 1, "species": 1 } },
         { "$count": "total" }
-    ], allowDiskUse=True)
+    ], allowDiskUse=True),
+
+    "indice_de_shannon": lambda: collection3.aggregate([
+        { "$unwind": "$properties.trees.features" },
+        {
+            "$group": {
+            "_id": {
+                "tree_id": "$properties.trees.features.properties.tree_id",
+                "plot_id": "$properties.plot.id",
+                "sub_plot_id": "$properties.trees.features.properties.sub_plot_id",
+                "species": "$properties.trees.features.properties.tree_species_species"
+            }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$_id.plot_id",
+                "sub_plot_id": "$_id.sub_plot_id",
+                "species": "$_id.species"
+            },
+            "count_species": { "$sum": 1 }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$_id.plot_id",
+                "sub_plot_id": "$_id.sub_plot_id"
+            },
+            "species_counts": {
+                "$push": {
+                "species": "$_id.species",
+                "count": "$count_species"
+                }
+            },
+            "total_trees": { "$sum": "$count_species" }
+            }
+        },
+        { "$unwind": "$species_counts" },
+        {
+            "$project": {
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "species": "$species_counts.species",
+            "p_i": { "$divide": ["$species_counts.count", "$total_trees"] }
+            }
+        },
+        {
+            "$project": {
+            "plot_id": 1,
+            "sub_plot_id": 1,
+            "species": 1,
+            "shannon_term": { "$multiply": ["$p_i", { "$ln": "$p_i" }] }
+            }
+        },
+        {
+            "$group": {
+            "_id": {
+                "plot_id": "$plot_id",
+                "sub_plot_id": "$sub_plot_id"
+            },
+            "shannon_index": { "$sum": "$shannon_term" }
+            }
+        },
+        {
+            "$project": {
+            "_id": 0,
+            "plot_id": "$_id.plot_id",
+            "sub_plot_id": "$_id.sub_plot_id",
+            "shannon_index": { "$multiply": ["$shannon_index", -1] }
+            }
+        },
+        { "$sort": { "plot_id": 1, "sub_plot_id": 1 } },
+        { "$count": "total" }
+    ])
 }
 
 logger.info("RESULTAT TROISIEME STRUCTURE")

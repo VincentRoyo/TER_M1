@@ -1,7 +1,6 @@
 import couchdb3
 import time
 import logging
-import json
 import requests
 import time
 
@@ -303,7 +302,7 @@ design_doc_forest3 = {
                     return a.concat(b);
                 }, []);
             } else {
-                return Array.from(new Set(values));;
+                return Array.from(new Set(values));
             }
         }
         """
@@ -434,7 +433,6 @@ if "_design/forest2_views" not in databases["forest2"]:
     except Exception as e:
       logging.error(f"Erreur lors de l'ajout du design document forest2_views : {e}")
 
-
 if "_design/forest3_views" not in databases["forest3"]:
     try:
       databases["forest3"].save(design_doc_forest3)   
@@ -456,7 +454,7 @@ def execute_view_with_requests(db_name, design_doc,view_name):
         
         reduce_param = "&reduce=true" if "reduce" in design_doc_queries["views"].get(view_name, {}) else ""
         group_param = "group=true" if "reduce" in design_doc_queries["views"].get(view_name, {}) else ""
-        stale_param="&stable=true&update=false"
+        stale_param="&stable=true&update=true"
         url = f"{client.url}/{db_name}/_design/{design_doc}/_view/{view_name}?{group_param}{reduce_param}{stale_param}"
         
         response = requests.get(url, auth=('admin', 'password'))
