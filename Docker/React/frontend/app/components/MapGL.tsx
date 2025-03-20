@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import DeckGL, {ZoomWidget} from "@deck.gl/react";
+import DeckGL from "@deck.gl/react";
 import {GeoJsonLayer, TextLayer} from "@deck.gl/layers";
 import {Map} from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -7,30 +7,39 @@ import type {GeoJSON, MapGLProps, TextMap} from "~/Types";
 import {Layer} from "@deck.gl/core";
 import {getCenter} from "~/utils";
 
+/**
+ * TODO REGARDER LE PROBLEME DE ZOOM QUAND ON CLIQUE SUR UN PLOT DANS LA SIDEBAR (POSSIBLE QUE L'UTILISATION DE MAPZOOM SOIT UTILISEE AU LIEU DU ZOOM DE DECKGL DE L'UTILISATEUR CAR GETLAYERS CHANGE L'ETAT ET REFRESH LE COMPOSANT)
+ * @param mapZoom
+ * @param geoJsonData
+ * @param treesJsonData
+ * @constructor
+ */
 export default function MapGL({
                                   mapZoom,
                                   geoJsonData,
                                   treesJsonData,
                               }: MapGLProps): React.ReactElement {
 
-
+    const [layers, setLayers] = React.useState<Layer[]>([]);
     const [intervalBearing, setIntervalBearing] = React.useState<NodeJS.Timeout>();
     const [bearing, setBearing] = React.useState<number>(0);
 
     useEffect(() => {
-
         if (mapZoom.zoom === 17) {
             const interval = setInterval(() => {
-                setBearing((prevState) =>(prevState+1)%360)
-            }, 50)
-
+                setBearing((prevState) =>(prevState+0.5)%360)
+            }, 20)
+            getLayers();
             setIntervalBearing(interval);
             return () => clearInterval(interval);
         }
-
     }, [mapZoom])
 
-    function getLayers(): Layer[] {
+    useEffect(() => {
+        getLayers();
+    }, []);
+
+    function getLayers(currentZoom: number = mapZoom.zoom): void {
         const layers: Layer[] = [];
         const textData: TextMap[] = [];
 
@@ -50,16 +59,6 @@ export default function MapGL({
                 })
             };
 
-            const geoJsonSubPlots: GeoJSON = {
-                type: "FeatureCollection",
-                features: geoJsonData.map(plot => plot.sub_plots.map(subPlot => subPlot.location)).flat()
-            };
-
-            const geoJsonTrees: GeoJSON = {
-                type: "FeatureCollection",
-                features: treesJsonData
-            }
-
             layers.push(new GeoJsonLayer({
                 id: "geojson-layer-plot",
                 data: geoJsonPlots,
@@ -68,22 +67,35 @@ export default function MapGL({
                 getPointRadius: 100
             }));
 
-            layers.push(new GeoJsonLayer({
-                id: "geojson-layer-sub-plot",
-                data: geoJsonSubPlots,
-                filled: true,
-                getFillColor: [0, 0, 255],
-                getPointRadius: 100
-            }));
-            
+            if (currentZoom >= 17) {
+                const geoJsonSubPlots: GeoJSON = {
+                    type: "FeatureCollection",
+                    features: geoJsonData.map(plot => plot.sub_plots.map(subPlot => subPlot.location)).flat()
+                };
 
-            layers.push(new GeoJsonLayer({
-                id: "geojson-layer-trees",
-                data: geoJsonTrees,
-                filled: true,
-                getFillColor: [144, 238, 144],
-                getPointRadius: 1.5
-            }));
+                layers.push(new GeoJsonLayer({
+                    id: "geojson-layer-sub-plot",
+                    data: geoJsonSubPlots,
+                    filled: true,
+                    getFillColor: [0, 0, 255],
+                    getPointRadius: 100
+                }));
+            }
+
+            if (currentZoom >= 19) {
+                const geoJsonTrees: GeoJSON = {
+                    type: "FeatureCollection",
+                    features: treesJsonData
+                }
+
+                layers.push(new GeoJsonLayer({
+                    id: "geojson-layer-trees",
+                    data: geoJsonTrees,
+                    filled: true,
+                    getFillColor: [144, 238, 144],
+                    getPointRadius: 1.5
+                }));
+            }
 
 
             layers.push(new TextLayer<TextMap>({
@@ -98,16 +110,13 @@ export default function MapGL({
                 pickable: true
             }));
         }
-
-        return layers;
+        setLayers(layers);
     }
 
-    function handleViewStateChange() {
-        setBearing(0);
+    function handleViewStateChange(params) {
+        getLayers(params.viewState.zoom);
         clearInterval(intervalBearing);
     }
-
-
 
     return (
         <DeckGL
@@ -119,9 +128,7 @@ export default function MapGL({
                 bearing
             }}
             controller
-            layers={
-                getLayers()
-            }
+            layers={layers}
             onViewStateChange={handleViewStateChange}
         >
 
