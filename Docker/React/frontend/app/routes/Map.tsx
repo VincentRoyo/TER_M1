@@ -11,6 +11,8 @@ export async function clientLoader(): Promise<Locations> {
 
 export default function Map({loaderData}: { loaderData: Locations }): React.ReactElement {
     const [mapZoom, setMapZoom] = useState<MapZoom>();
+    const [selectedPlot, setSelectedPlot] = useState<string | null>(null);
+    const [selectedSubPlot, setSelectedSubPlot] = useState<string | null>(null);
 
     let {plotLocation, treesLocation} = loaderData;
 
@@ -33,8 +35,17 @@ export default function Map({loaderData}: { loaderData: Locations }): React.Reac
     return (
         <>
             <div style={{position: "relative", height: "100vh"}}>
-                <SideBar elements={plotLocation} handleClickPlot={handleClickPlot} handleClickSubPlot={handleClickSubPlot}/>
-                <MapGL geoJsonData={plotLocation} treesJsonData={treesLocation} mapZoom={mapZoom}/>
+                <SideBar elements={plotLocation} handleClickPlot={handleClickPlot}
+                         handleClickSubPlot={handleClickSubPlot} selectedPlot={selectedPlot} selectedSubPlot={selectedSubPlot} />
+                <MapGL geoJsonData={plotLocation} treesJsonData={treesLocation} mapZoom={mapZoom}
+                       onPlotClick={(plotId) => {
+                           setSelectedPlot(plotId);
+                           setSelectedSubPlot(null);
+                       }}
+                       onSubPlotClick={(plotId, subPlotId) => {
+                           setSelectedPlot(plotId);
+                           setSelectedSubPlot(subPlotId);
+                       }}/>
             </div>
         </>
 

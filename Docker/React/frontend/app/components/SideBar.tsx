@@ -1,5 +1,5 @@
-﻿import React, {type BaseSyntheticEvent, type ReactElement, useState} from "react";
-import {Button, Collapse, ListGroup, Offcanvas} from "react-bootstrap";
+﻿import React, {type BaseSyntheticEvent, type ReactElement, useEffect, useState} from "react";
+import {Accordion, Button, Collapse, ListGroup, Offcanvas} from "react-bootstrap";
 import type {PlotLocation, SideBarProps, SubPlot} from "~/Types";
 import SearchBar from "~/components/SearchBar";
 import {sortNamePlot, sortNameSubPlot} from "~/utils";
@@ -7,6 +7,7 @@ import {sortNamePlot, sortNameSubPlot} from "~/utils";
 export default function SideBar(props: SideBarProps): ReactElement {
 
     const [selected, setSelected] = useState<string>("");
+    const [selectedSubPlot, setSelectedSubPlot] = useState<string>("");
     const [plotOpen, setPlotOpen] = useState<PlotLocation | null>(null);
 
     const [elements, setElements] = useState<PlotLocation[]>(props.elements);
@@ -42,6 +43,30 @@ export default function SideBar(props: SideBarProps): ReactElement {
         }
     }
 
+    useEffect(() => {
+        if (props.selectedPlot) {
+            const selectedPlot = props.elements.find(el => el.plot_id === props.selectedPlot);
+            if (selectedPlot) {
+                setPlotOpen(selectedPlot);
+                setInitialSubElements(selectedPlot.sub_plots);
+                setSubElements(selectedPlot.sub_plots);
+            }
+
+            if (props.selectedSubPlot) {
+                const selectedSubPlot = selectedPlot.sub_plots.find(el => el.idSubPlot.toString() === props.selectedSubPlot?.toString());
+                props.handleClickSubPlot(selectedSubPlot);
+                setSelectedSubPlot(props.selectedSubPlot.toString());
+                setSelected(props.selectedPlot);
+            } else {
+                props.handleClickPlot(selectedPlot);
+                setSelected(props.selectedPlot.toString());
+                setSelectedSubPlot("");
+            }
+
+            setShow(true);
+        }
+    }, [props.selectedPlot, props.selectedSubPlot]);
+
     return (
         <>
             <Button variant="primary" onClick={handleShow} className="m-3"
@@ -50,49 +75,60 @@ export default function SideBar(props: SideBarProps): ReactElement {
             </Button>
 
             <Offcanvas show={show} onHide={handleClose} backdrop={false}>
-                <Offcanvas.Header closeButton className="d-flex" style={{gap: "5vh"}}>
+                <Offcanvas.Header closeButton className="d-flex" style={{ gap: "5vh" }}>
                     <Offcanvas.Title>Plots</Offcanvas.Title>
-                    <SearchBar handleChange={handleChangeSearchBar} value={valueSearchBar}/>
+                    <SearchBar handleChange={handleChangeSearchBar} value={valueSearchBar} />
                 </Offcanvas.Header>
+
                 <Offcanvas.Body className="p-0">
-                    <ListGroup variant="flush">
+                    <Accordion activeKey={selected}>
                         {elements.map((item, index) => (
-                            <div key={index}>
-                                <ListGroup.Item
-                                    action
-                                    active={selected === item.plot_id}
+                            <Accordion.Item eventKey={item.plot_id} key={index}>
+                                <Accordion.Header
                                     onClick={() => {
-                                        setSelected(item.plot_id);
-                                        setPlotOpen(item)
-                                        setInitialSubElements(item.sub_plots)
-                                        setSubElements(item.sub_plots)
-                                        props.handleClickPlot(item)
+                                        if (selected === item.plot_id) {
+                                            setSelected("");
+                                            setSelectedSubPlot("");
+                                            setPlotOpen(null);
+                                            setSubElements([]);
+                                        } else {
+                                            setSelected(item.plot_id);
+                                            setPlotOpen(item);
+                                            setInitialSubElements(item.sub_plots);
+                                            setSubElements(item.sub_plots);
+                                            props.handleClickPlot(item);
+                                        }
                                     }}
+                                    className={`${
+                                        selected === item.plot_id ? 'bg-primary text-white' : ''
+                                    }`}
                                 >
                                     {item.plot_id}
-                                </ListGroup.Item>
+                                </Accordion.Header>
 
-                                <Collapse in={plotOpen?.plot_id === item.plot_id}>
-                                    <div className="bg-secondary bg-opacity-25 ps-4 border-start border-2 border-dark">
-                                        <ListGroup variant="flush">
-                                            {subElements.map((subPlot, subIndex) => (
-                                                <ListGroup.Item action
-                                                                active={selected === subPlot.idSubPlot.toString()}
-                                                                key={`${item.plot_id}-${subIndex}`}
-                                                                onClick={() => {
-                                                                    setSelected(subPlot.idSubPlot.toString());
-                                                                    props.handleClickSubPlot(subPlot);
-                                                                }}
-                                                                className={`${selected === subPlot.idSubPlot.toString() ? '' : 'bg-transparent'}`}>
-                                                    {subPlot.idSubPlot}
-                                                </ListGroup.Item>
-                                            ))}
-                                        </ListGroup>
-                                    </div>
-                                </Collapse>
-                            </div>
+                                <Accordion.Body>
+                                    <ListGroup variant="flush">
+                                        {subElements.map((subPlot, subIndex) => (
+                                            <ListGroup.Item
+                                                key={`${item.plot_id}-${subIndex}`}
+                                                action
+                                                active={selectedSubPlot === subPlot.idSubPlot.toString()}
+                                                onClick={() => {
+                                                    setSelectedSubPlot(subPlot.idSubPlot.toString());
+                                                    props.handleClickSubPlot(subPlot);
+                                                }}
+                                                className={`${
+                                                    selectedSubPlot === subPlot.idSubPlot.toString() ? '' : 'bg-transparent'
+                                                }`}
+                                            >
+                                                {subPlot.idSubPlot}
+                                            </ListGroup.Item>
+                                        ))}
+                                    </ListGroup>
+                                </Accordion.Body>
+                            </Accordion.Item>
                         ))}
-                    </ListGroup>
+                    </Accordion>
                 </Offcanvas.Body>
             </Offcanvas>
         </>

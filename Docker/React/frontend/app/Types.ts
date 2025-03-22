@@ -55,6 +55,8 @@ export interface MapGLProps {
     mapZoom: MapZoom | undefined;
     geoJsonData?: PlotLocation[];
     treesJsonData?: Feature[];
+    onPlotClick: (plotId: string) => void;
+    onSubPlotClick: (plotId: string, subPlotId: string) => void;
 }
 
 export interface TextMap {
@@ -71,6 +73,8 @@ export interface SideBarProps {
     elements: PlotLocation[];
     handleClickPlot: (plot: PlotLocation) => void;
     handleClickSubPlot: (subPlot: SubPlot) => void;
+    selectedPlot: string | null;
+    selectedSubPlot: string | null;
 }
 
 export interface MapZoom {

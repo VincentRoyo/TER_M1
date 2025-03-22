@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, {type SyntheticEvent, useEffect, useState} from "react";
 import DeckGL from "@deck.gl/react";
 import {GeoJsonLayer, TextLayer} from "@deck.gl/layers";
 import {Map} from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type {GeoJSON, MapGLProps, Point, TextMap} from "~/Types";
-import {Layer} from "@deck.gl/core";
+import type {Feature, GeoJSON, MapGLProps, Point, TextMap} from "~/Types";
+import {Layer, type PickingInfo} from "@deck.gl/core";
 import {getCenter} from "~/utils";
 
 /**
@@ -18,7 +18,9 @@ import {getCenter} from "~/utils";
 export default function MapGL({
                                   mapZoom,
                                   geoJsonData,
-                                  treesJsonData
+                                  treesJsonData,
+                                  onPlotClick,
+                                  onSubPlotClick
                               }: MapGLProps): React.ReactElement {
 
     const [mapZoomState, setMapZoomState] = useState(mapZoom);
@@ -44,6 +46,20 @@ export default function MapGL({
         getLayers();
     }, []);
 
+    function handleLayerClick(info: PickingInfo): void {
+        if (info.object?.properties?.name) {
+            const plotId = info.object.properties.parent_plot_id ?? info.object.properties.name;
+            const subPlotId = info.object.properties.sub_plot_id || null;
+
+            if (subPlotId) {
+                console.log(plotId);
+                onSubPlotClick(plotId, subPlotId);
+            } else {
+                onPlotClick(plotId);
+            }
+        }
+    }
+
     function getLayers(currentZoom: number = 10): void {
         const layers: Layer[] = [];
         const textData: TextMap[] = [];
@@ -61,7 +77,14 @@ export default function MapGL({
                                 coordinates: [coords[0], coords[1]]
                             });
                         }
-                        return plot.location;
+                        return {
+                            type: "Feature",
+                            geometry: plot.location.geometry,
+                            properties: {
+                                name: plot.plot_id,
+                                plot_id: plot.plot_id,
+                            }
+                        };
                     })
                 };
 
@@ -70,14 +93,26 @@ export default function MapGL({
                     data: geoJsonPlots,
                     filled: true,
                     getFillColor: [255, 0, 0],
-                    getPointRadius: 100
+                    getPointRadius: 100,
+                    pickable: true,
+                    onClick: handleLayerClick
                 }));
             }
 
             if (currentZoom >= 17) {
                 const geoJsonSubPlots: GeoJSON = {
                     type: "FeatureCollection",
-                    features: geoJsonData.map(plot => plot.sub_plots.map(subPlot => subPlot.location)).flat()
+                    features: geoJsonData
+                        .map(plot => plot.sub_plots.map(subPlot => ({
+                            type: "Feature",
+                            geometry: subPlot.location.geometry,
+                            properties: {
+                                name: subPlot.idSubPlot,
+                                sub_plot_id: subPlot.idSubPlot,
+                                parent_plot_id: plot.plot_id
+                            }
+                        })))
+                        .flat()
                 };
 
                 layers.push(new GeoJsonLayer({
@@ -85,7 +120,9 @@ export default function MapGL({
                     data: geoJsonSubPlots,
                     filled: true,
                     getFillColor: [0, 0, 255],
-                    getPointRadius: 100
+                    getPointRadius: 100,
+                    pickable: true,
+                    onClick: handleLayerClick
                 }));
             }
 
@@ -101,7 +138,9 @@ export default function MapGL({
                     filled: true,
                     getFillColor: [144, 238, 144],
                     getPointRadius: 0.2,
-                    lineWidthMaxPixels: 5
+                    lineWidthMaxPixels: 5,
+                    pickable: true,
+                    onClick: handleLayerClick
                 }));
             } else if (currentZoom >= 21) {
                 layers.push(new GeoJsonLayer({
@@ -110,7 +149,9 @@ export default function MapGL({
                     filled: true,
                     getFillColor: [144, 238, 144],
                     getPointRadius: 0.5,
-                    lineWidthMaxPixels: 5
+                    lineWidthMaxPixels: 5,
+                    pickable: true,
+                    onClick: handleLayerClick
                 }));
             } else if (currentZoom >= 19) {
                 layers.push(new GeoJsonLayer({
@@ -119,7 +160,9 @@ export default function MapGL({
                     filled: true,
                     getFillColor: [144, 238, 144],
                     getPointRadius: 1,
-                    lineWidthMaxPixels: 10
+                    lineWidthMaxPixels: 10,
+                    pickable: true,
+                    onClick: handleLayerClick
                 }));
             }
 
