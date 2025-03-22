@@ -1,10 +1,8 @@
-import type {Point} from "geojson";
+import type {PlotLocation, Point, SubPlot} from "~/Types";
+
 
 export function getCenter(points: Point[] | undefined): Point {
-    if (!points || points.length === 0) return {
-        type: "Point",
-        coordinates: []
-    }
+    if (!points || points.length === 0) return [0,0];
 
     let sumX = 0, sumY = 0;
 
@@ -13,15 +11,15 @@ export function getCenter(points: Point[] | undefined): Point {
         sumY += point[1];
     });
 
-    return {
-        type: "Point",
-        coordinates: [sumX / points.length, sumY / points.length]
-    }
+    return [sumX / points.length, sumY / points.length];
 }
 
-export function sortNamePlot(a: string, b: string): number {
-    const numA = parseFloat(a);
-    const numB = parseFloat(b);
+export function sortNamePlot(a: PlotLocation, b: PlotLocation): number {
+    const nameA: string = a.plot_id;
+    const nameB: string = b.plot_id;
+
+    const numA = parseFloat(nameA);
+    const numB = parseFloat(nameB);
 
     // Vérifier si les deux éléments sont des nombres
     const isNumA = !isNaN(numA);
@@ -34,6 +32,10 @@ export function sortNamePlot(a: string, b: string): number {
     } else if (isNumB) {
         return 1; // Les textes après les nombres
     } else {
-        return a.localeCompare(b, undefined, {numeric: true}); // Tri alphabétique intelligent
+        return nameA.localeCompare(nameB, undefined, {numeric: true}); // Tri alphabétique intelligent
     }
+}
+
+export function sortNameSubPlot(a: SubPlot, b: SubPlot): number {
+    return a.idSubPlot - b.idSubPlot;
 }

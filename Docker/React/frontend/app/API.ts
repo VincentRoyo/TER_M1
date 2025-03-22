@@ -1,4 +1,4 @@
-import {type ApiResponse, type Feature, HttpMethods, type PlotLocation} from "~/Types";
+import {type ApiResponse, type Feature, HttpMethods, type PlotLocation, type Point} from "~/Types";
 import type {GeoJSON} from "geojson";
 
 const API_URL: string = import.meta.env.VITE_APP_API_URL;
@@ -6,18 +6,18 @@ const API_URL: string = import.meta.env.VITE_APP_API_URL;
 const config = {
     url: API_URL,
     options: {
-        headers: { 'content-type': 'application/json' },
+        headers: {'content-type': 'application/json'},
     },
 };
 
 async function handleErrors(response: Response): Promise<Response> {
     if (!response.ok) {
         try {
-            const result = await response.json();
+            const result: any = await response.json();
             const errorMessage: string = result.message ?? result['hydra:description'] ?? 'Unknown error';
             throw new Error(errorMessage);
         } catch (error) {
-            throw new Error("Failed to parse error response");
+            throw new Error(`Error with request : ${JSON.stringify(error)}`);
         }
     }
     return response;
@@ -33,32 +33,33 @@ const sendRequest = async <T>(endpoint: string, method: HttpMethods, payload?: R
         ...contentType,
     }
 
-    if(payload){
-        request.body = JSON.stringify({ ...payload });
+    if (payload) {
+        request.body = JSON.stringify({...payload});
     }
 
     const response = await fetch(`${config.url}/${endpoint}`, request);
 
-    await handleErrors(response);
+    try {
+        await handleErrors(response);
+    } catch (error: any) {
+        return {error: error.message}
+    }
 
-    return (await response.json());
+    return {data: (await response.json())};
 }
 
 const API = {
-    getPlotLocation: async (): ApiResponse<PlotLocation[]> => {
-        try {
-            const response = await sendRequest(`geoplot`, HttpMethods.GET);
-            const data: PlotLocation[] = response as PlotLocation[];
-            return {data};
-        } catch (error: Error) {
-            return {error: error.message};
-        }
+    getPlotLocation: async (): Promise<PlotLocation[] | undefined> => {
+        const response: ApiResponse<PlotLocation[]> = await sendRequest<PlotLocation[]>(`geoplot`, HttpMethods.GET);
+        if (response.data) {
+            return response.data;
+        } else return undefined;
     },
-    getTreesLocation: async (): ApiResponse<Feature[]> => {
+    getTreesLocation: async (): ApiResponse<Feature<Point>[]> => { //TODO FAIRE PAREIL QUE LA PREMIERE METHODE
         try {
             const response = await fetch(`${API_URL}/allgeo`, {method: "GET"});
             if (!response.ok) return {error: "Error fetching trees"};
-            const data: Feature[] = (await response.json()) as Feature[];
+            const data: Feature<Point>[] = (await response.json()) as Feature<Point>[];
             return {data};
         } catch (error: Error) {
             return {error: error.message};

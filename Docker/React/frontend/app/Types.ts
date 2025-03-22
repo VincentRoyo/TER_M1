@@ -5,8 +5,7 @@ import type {
     LineString,
     MultiLineString,
     MultiPoint,
-    MultiPolygon,
-    Point
+    MultiPolygon
 } from "geojson";
 
 
@@ -21,6 +20,8 @@ export type GeoJSON<G extends Geometry | null = Geometry, P = GeoJsonProperties>
     | G
     | Feature<G, P>
     | FeatureCollection<G, P>;
+
+export type Point = [number, number];
 
 export interface Polygon extends GeoJsonObject {
     type: "Polygon";
@@ -51,7 +52,7 @@ export interface ApiResponse<T> {
 }
 
 export interface MapGLProps {
-    mapZoom: MapZoom;
+    mapZoom: MapZoom | undefined;
     geoJsonData?: PlotLocation[];
     treesJsonData?: Feature[];
 }
@@ -67,8 +68,9 @@ export interface Locations {
 }
 
 export interface SideBarProps {
-    elements: string[],
-    handleClickPlot: (plotName: string) => void
+    elements: PlotLocation[];
+    handleClickPlot: (plot: PlotLocation) => void;
+    handleClickSubPlot: (subPlot: SubPlot) => void;
 }
 
 export interface MapZoom {
