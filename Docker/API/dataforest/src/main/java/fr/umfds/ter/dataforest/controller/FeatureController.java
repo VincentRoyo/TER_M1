@@ -1,9 +1,14 @@
 package fr.umfds.ter.dataforest.controller;
 
 import fr.umfds.ter.dataforest.model.Feature;
+import fr.umfds.ter.dataforest.model.InfosPlot;
+import fr.umfds.ter.dataforest.model.InfosSubPlot;
 import fr.umfds.ter.dataforest.model.PlotLocationResponse;
 import fr.umfds.ter.dataforest.repository.FeatureRepository;
+import fr.umfds.ter.dataforest.service.FeatureService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -12,9 +17,11 @@ import java.util.List;
 public class FeatureController {
 
     private final FeatureRepository repository;
+    private final FeatureService service;
 
-    public FeatureController(FeatureRepository repository) {
+    public FeatureController(FeatureRepository repository, FeatureService service) {
         this.repository = repository;
+        this.service = service;
     }
 
     @GetMapping("/all")
@@ -32,4 +39,13 @@ public class FeatureController {
         return repository.findAllPlotsWithLocation();
     }
 
+    @GetMapping("/infoplot/{idPlot}")
+    public InfosPlot getInfosPlot(@PathVariable String idPlot) {
+        return service.getPlotInfo(idPlot);
+    }
+
+    @GetMapping("/infosubplot/{idSubPlot}")
+    public InfosSubPlot getInfosSubPlot(@PathVariable String idSubPlot) {
+        return service.getSubPlotInfo(idSubPlot);
+    }
 }

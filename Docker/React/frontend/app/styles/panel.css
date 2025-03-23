@@ -1,0 +1,15 @@
+﻿
+p {
+    color: #555;
+}
+
+.panelLabel {
+    text-transform: uppercase;
+    margin-bottom: 0;
+}
+
+.panelValue {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #222;
+}

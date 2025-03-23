@@ -5,12 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @SpringBootApplication(
-		scanBasePackages = {
-				"fr.umfds.ter.dataforest.controller",
-				"fr.umfds.ter.dataforest.model",
-				"fr.umfds.ter.dataforest.repository",
-				"fr.umfds.ter.dataforest.config"
-		}
+		scanBasePackages = {"fr.umfds.ter.dataforest"}
 )
 @EnableMongoRepositories
 public class DataforestApplication {

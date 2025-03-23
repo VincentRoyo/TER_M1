@@ -1,5 +1,12 @@
-import {type ApiResponse, type Feature, HttpMethods, type PlotLocation, type Point} from "~/Types";
-import type {GeoJSON} from "geojson";
+import {
+    type ApiResponse,
+    type Feature,
+    HttpMethods,
+    type InfoPlot,
+    type InfoSubPlot,
+    type PlotLocation,
+    type Point
+} from "~/Types";
 
 const API_URL: string = import.meta.env.VITE_APP_API_URL;
 
@@ -64,6 +71,18 @@ const API = {
         } catch (error: Error) {
             return {error: error.message};
         }
+    },
+    getInfosPlot: async (idPlot: string): Promise<InfoPlot> => {
+        const response: ApiResponse<InfoPlot> = await sendRequest<InfoPlot>(`infoplot/${idPlot}`, HttpMethods.GET);
+        if (response.data) {
+            return response.data;
+        } else return undefined;
+    },
+    getInfosSubPlot: async (idSubPlot: string): Promise<InfoSubPlot> => {
+        const response: ApiResponse<InfoSubPlot> = await sendRequest<InfoSubPlot>(`infosubplot/${idSubPlot}`, HttpMethods.GET);
+        if (response.data) {
+            return response.data;
+        } else return undefined;
     }
 }
 

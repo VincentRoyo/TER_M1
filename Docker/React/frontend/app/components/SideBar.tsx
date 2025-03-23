@@ -53,7 +53,7 @@ export default function SideBar(props: SideBarProps): ReactElement {
             }
 
             if (props.selectedSubPlot) {
-                const selectedSubPlot = selectedPlot.sub_plots.find(el => el.idSubPlot.toString() === props.selectedSubPlot?.toString());
+                const selectedSubPlot = selectedPlot?.sub_plots.find(el => el.idSubPlot.toString() === props.selectedSubPlot?.toString());
                 props.handleClickSubPlot(selectedSubPlot);
                 setSelectedSubPlot(props.selectedSubPlot.toString());
                 setSelected(props.selectedPlot);
@@ -69,12 +69,12 @@ export default function SideBar(props: SideBarProps): ReactElement {
 
     return (
         <>
-            <Button variant="primary" onClick={handleShow} className="m-3"
-                    style={{position: "absolute", top: 20, left: 20, zIndex: 1000}}>
-                ☰ Afficher carte
+            <Button variant={"light"} onClick={handleShow} className="m-3"
+                    style={{position: "absolute", top: 20, left: 20, zIndex: 1000, borderRadius: "50%" }}>
+                <i class="bi bi-search fs-4"></i>
             </Button>
 
-            <Offcanvas show={show} onHide={handleClose} backdrop={false}>
+            <Offcanvas show={show} onHide={handleClose} backdrop={false} style={{ border: "none" }}>
                 <Offcanvas.Header closeButton className="d-flex" style={{ gap: "5vh" }}>
                     <Offcanvas.Title>Plots</Offcanvas.Title>
                     <SearchBar handleChange={handleChangeSearchBar} value={valueSearchBar} />

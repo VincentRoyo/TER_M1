@@ -83,6 +83,50 @@ export interface MapZoom {
     coordinates: Point
 }
 
+export interface PopupInfoProps {
+    plot?: string;
+    subPlot?: string;
+}
+
+export interface TabProps {
+    tabIndex: number;
+    setTabIndex: (index: number) => void;
+}
+
+export interface TabProps {
+    tabIndex: number;
+    setTabIndex: (index: number) => void;
+}
+
+export interface PopupInfoPlotProps {
+    plot: string;
+    tabIndex: number;
+}
+
+export interface PopupInfoSubPlotProps {
+    subPlot: string;
+    tabIndex: number;
+}
+
+export interface InfoPlot {
+    idPlot: string;
+    forest: string;
+    area: number;
+    nbTrees: number;
+    density: number;
+    shannon: number;
+}
+
+export interface InfoSubPlot {
+    idSubPlot: string;
+    idPlot: string;
+    forest: string;
+    area: number;
+    nbTrees: number;
+    density: number;
+    shannon: number;
+}
+
 export enum HttpMethods {
     GET = 'GET',
     POST = 'POST',
