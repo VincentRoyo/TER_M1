@@ -44,8 +44,8 @@ public class FeatureController {
         return service.getPlotInfo(idPlot);
     }
 
-    @GetMapping("/infosubplot/{idSubPlot}")
-    public InfosSubPlot getInfosSubPlot(@PathVariable String idSubPlot) {
-        return service.getSubPlotInfo(idSubPlot);
+    @GetMapping("/infoplot/{idPlot}/infosubplot/{idSubPlot}")
+    public InfosSubPlot getInfosSubPlot(@PathVariable String idPlot, @PathVariable String idSubPlot) {
+        return service.getSubPlotInfo(idPlot, idSubPlot);
     }
 }

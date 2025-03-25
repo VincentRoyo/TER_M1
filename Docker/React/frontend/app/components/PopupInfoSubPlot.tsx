@@ -3,27 +3,28 @@ import type {PopupInfoSubPlotProps} from "~/Types";
 import API from "~/API";
 import {Col, Container, Row, Spinner} from "react-bootstrap";
 
-export default function PopupInfoSubPlot({ subPlot, tabIndex }: PopupInfoSubPlotProps): React.ReactElement {
+export default function PopupInfoSubPlot({plot, subPlot, tabIndex }: PopupInfoSubPlotProps): React.ReactElement {
 
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
+    console.log(plot, subPlot)
     useEffect(() => {
-        API.getInfosSubPlot(subPlot).then(response => {
+        API.getInfosSubPlot(plot, subPlot).then(response => {
             setData(response);
             setIsLoading(false);
         });
-    }, []);
+    }, [subPlot]);
 
     if (isLoading) {
         return (
             <div className="loading-container">
-                <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Chargement...</span>
-                </Spinner>
+                <Spinner role="status"></Spinner>
             </div>
         );
     }
+
+    console.log(data)
 
     return (
         <>

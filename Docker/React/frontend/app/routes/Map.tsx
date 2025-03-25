@@ -38,10 +38,10 @@ export default function Map({loaderData}: { loaderData: Locations }): React.Reac
         setSelectedPlotForSubPop(null);
     }
 
-    function handleClickSubPlot(subPlot: SubPlot): void {
-        setMapZoom({zoom: 21, coordinates: getCenter(subPlot.location.geometry.coordinates[0]), pitch: 50})
+    function handleClickSubPlot(plot: PlotLocation, subPlot: SubPlot): void {
+        setMapZoom({zoom: 21, coordinates: getCenter(subPlot.location.geometry.coordinates[0]), pitch: 50});
         setSelectedPlotForSubPop(subPlot.idSubPlot.toString());
-        setSelectedPlotForPop(null);
+        setSelectedPlotForPop(plot.plot_id);
     }
 
     return (

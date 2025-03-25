@@ -115,7 +115,7 @@ export default function SideBar(props: SideBarProps): ReactElement {
                                                 active={selectedSubPlot === subPlot.idSubPlot.toString()}
                                                 onClick={() => {
                                                     setSelectedSubPlot(subPlot.idSubPlot.toString());
-                                                    props.handleClickSubPlot(subPlot);
+                                                    props.handleClickSubPlot(item, subPlot);
                                                 }}
                                                 className={`${
                                                     selectedSubPlot === subPlot.idSubPlot.toString() ? '' : 'bg-transparent'

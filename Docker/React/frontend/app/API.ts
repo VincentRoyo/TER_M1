@@ -78,8 +78,8 @@ const API = {
             return response.data;
         } else return undefined;
     },
-    getInfosSubPlot: async (idSubPlot: string): Promise<InfoSubPlot> => {
-        const response: ApiResponse<InfoSubPlot> = await sendRequest<InfoSubPlot>(`infosubplot/${idSubPlot}`, HttpMethods.GET);
+    getInfosSubPlot: async (idPlot: string, idSubPlot: string): Promise<InfoSubPlot> => {
+        const response: ApiResponse<InfoSubPlot> = await sendRequest<InfoSubPlot>(`infoplot/${idPlot}/infosubplot/${idSubPlot}`, HttpMethods.GET);
         if (response.data) {
             return response.data;
         } else return undefined;

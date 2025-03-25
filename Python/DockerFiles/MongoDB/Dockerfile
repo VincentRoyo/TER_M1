@@ -15,5 +15,5 @@ COPY ../../Python/DataForest/ /app/DataForest/
 WORKDIR /app
 
 # Lancer le script Python
-CMD ["bash", "-c", "python script-mongo.py && python script-exec-queries-mongo.py"]
+CMD ["bash", "-c", "python script-mongo.py"]
 #CMD ["python", "script-couch.py"]
