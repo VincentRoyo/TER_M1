@@ -187,8 +187,6 @@ export default function MapGL({
         clearInterval(intervalBearing);
     }
 
-
-
     return (
         <DeckGL
             initialViewState={

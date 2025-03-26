@@ -4,6 +4,8 @@ import pandas as pd
 import logging
 import time
 from scipy.spatial import ConvexHull
+import math
+import numpy as np
 
 # Logger pour générer un fichier de log
 logger = logging.getLogger("")
@@ -13,27 +15,137 @@ logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, f
 """
 Prend une liste de GeoJSON de type Point et retourne un GeoJSON de type Polygon représentant l'enveloppe convexe.
 """
-def grahamScan(geojson_list):
-    
-    points = [feature["coordinates"] for feature in geojson_list if feature["type"] == "Point"]
+def chansAlgorithm(geojson_list, threshold=3):
+    """
+    Calcule l'enveloppe convexe d'une liste de points GeoJSON en utilisant
+    l'algorithme optimisé de Chan, après avoir éliminé les points trop éloignés
+    grâce à une méthode robuste (filtrage par MAD).
 
-    if len(points) < 3:
+    Paramètres:
+      - geojson_list : liste de features GeoJSON dont le type est "Point".
+      - threshold    : multiplicateur appliqué à la MAD pour définir le seuil d'élimination.
+                       (La valeur par défaut est 3.)
+                       
+    Retourne:
+      - Un objet GeoJSON de type "Feature" contenant l'enveloppe convexe sous forme de polygone,
+        ou None si le nombre de points restants est insuffisant.
+    """
+    import math, statistics
+
+    # Extraction des points sous forme de tuples
+    points = [tuple(feature["coordinates"]) for feature in geojson_list if feature["type"] == "Point"]
+    n = len(points)
+    if n < 3:
         return None
 
-    hull = ConvexHull(points)
-    hull_points = [points[i] for i in hull.vertices]
-    hull_points.append(hull_points[0])
+    # --- Filtrage robuste des outliers ---
+    # Calcul du centre robuste (médiane des coordonnées)
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    center = (statistics.median(xs), statistics.median(ys))
+    
+    # Calcul des distances au centre
+    distances = [math.sqrt((p[0] - center[0])**2 + (p[1] - center[1])**2) for p in points]
+    
+    # Calcul de la médiane des distances et de la MAD
+    med_distance = statistics.median(distances)
+    abs_devs = [abs(d - med_distance) for d in distances]
+    mad = statistics.median(abs_devs)
+    
+    # Si la MAD est nulle, aucun filtrage n'est appliqué (les points sont très concentrés)
+    if mad == 0:
+        filtered_points = points
+    else:
+        filtered_points = [p for p, d in zip(points, distances) if d <= med_distance + threshold * mad]
 
+    # Vérifier qu'il reste au moins 3 points après filtrage
+    if len(filtered_points) < 3:
+        return None
+
+    # --- Algorithme de Chan pour le calcul de l'enveloppe convexe ---
+    def orientation(p, q, r):
+        """
+        Renvoie un nombre négatif si r est à gauche de la droite (p,q),
+        positif si r est à droite, et 0 si les trois points sont colinéaires.
+        """
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    def monotone_chain(pts):
+        """
+        Calcule l'enveloppe convexe d'un ensemble de points avec l'algorithme du chainage monotone.
+        """
+        pts = sorted(set(pts))
+        if len(pts) <= 1:
+            return pts
+        lower = []
+        for p in pts:
+            while len(lower) >= 2 and orientation(lower[-2], lower[-1], p) <= 0:
+                lower.pop()
+            lower.append(p)
+        upper = []
+        for p in reversed(pts):
+            while len(upper) >= 2 and orientation(upper[-2], upper[-1], p) <= 0:
+                upper.pop()
+            upper.append(p)
+        return lower[:-1] + upper[:-1]
+
+    filtered_n = len(filtered_points)
+    t = 1
+    while True:
+        m = min(filtered_n, 2**t)  # Taille des groupes
+        # Partition des points en groupes de taille m
+        groups = [filtered_points[i:i + m] for i in range(0, filtered_n, m)]
+        # Calcul de l'enveloppe convexe de chaque groupe par chainage monotone
+        group_hulls = [monotone_chain(group) for group in groups if group]
+        
+        # Recherche de l'enveloppe convexe globale par marche de Jarvis sur les enveloppes de groupe
+        start = min(filtered_points, key=lambda p: (p[0], p[1]))
+        hull = [start]
+        
+        for j in range(m):
+            candidate = None
+            for H in group_hulls:
+                for p in H:
+                    if p == hull[-1]:
+                        continue
+                    if candidate is None:
+                        candidate = p
+                    else:
+                        o = orientation(hull[-1], candidate, p)
+                        # Si p est plus à gauche que le candidat actuel
+                        if o < 0:
+                            candidate = p
+                        # En cas de colinéarité, choisir le point le plus éloigné
+                        elif o == 0:
+                            if (p[0] - hull[-1][0])**2 + (p[1] - hull[-1][1])**2 > (candidate[0] - hull[-1][0])**2 + (candidate[1] - hull[-1][1])**2:
+                                candidate = p
+            if candidate is None:
+                break
+            if candidate == start:
+                hull.append(candidate)
+                break
+            hull.append(candidate)
+        
+        if len(hull) <= m:
+            break
+        t += 1
+
+    # Fermeture du polygone si nécessaire
+    if hull[0] != hull[-1]:
+        hull.append(hull[0])
+
+    # Conversion du résultat au format GeoJSON
     convex_hull_geojson = {
         "type": "Feature",
         "geometry": {
             "type": "Polygon",
-            "coordinates": [hull_points]
+            "coordinates": [list(hull)]
         },
         "properties": {}
     }
-
     return convex_hull_geojson
+
+
 
 """
 {
@@ -191,14 +303,14 @@ def transformToJSON(df):
 
 
   for _, row in grouped_geometry.iterrows():
-    convex_hull_geojson = grahamScan(row["geometry"])
+    convex_hull_geojson = chansAlgorithm(row["geometry"])
 
     for _, tree in trees.items():
       if tree["properties"]["plot"]["id"] == row["Plot"]:
         tree["properties"]["plot"]["location"] = convex_hull_geojson
 
   for _, row in grouped_sub_geometry.iterrows():
-    convex_hull_geojson = grahamScan(row["geometry"])
+    convex_hull_geojson = chansAlgorithm(row["geometry"])
 
     for _, tree in trees.items():
       if tree["properties"]["plot"]["id"] == row["Plot"]:
@@ -208,7 +320,7 @@ def transformToJSON(df):
   return trees
 
 
-""" TODO pas encore fait l'algo de graham pour cette structure
+"""
 {
   "type": "Feature",
   "geometry": {
@@ -311,7 +423,7 @@ def transformToJSON2(df):
       plot_id = plot[0]
 
       geo_group = grouped_geometry[grouped_geometry["Plot"] == plot_id]
-      convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+      convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
 
       plots[plot] = {
           "type": "Feature",
@@ -344,7 +456,7 @@ def transformToJSON2(df):
                (grouped_sub_geometry["Plot"] == plot_id) & (grouped_sub_geometry["SubPlot"] == sub_plot_id)
                 ]
 
-            convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+            convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
 
             plots[plot]["properties"]["sub_plots"]["features"].append({
                "type": "Feature",
@@ -502,7 +614,7 @@ def transformToJSON3(df):
       plot_id = plot[0]
 
       geo_group = grouped_geometry[grouped_geometry["Plot"] == plot_id]
-      convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+      convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
 
       plots[plot] = {
           "type": "Feature",
@@ -535,7 +647,7 @@ def transformToJSON3(df):
                 (grouped_sub_geometry["Plot"] == plot_id) & (grouped_sub_geometry["SubPlot"] == sub_plot_id)
             ]
             
-            convex_hull_geojson = grahamScan(geo_group["geometry"].iloc[0])
+            convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
             
             plots[plot]["properties"]["sub_plots"]["features"].append({
                 "type": "Feature",
