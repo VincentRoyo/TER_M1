@@ -7,19 +7,16 @@ import type {PopupInfoPlotProps} from "~/Types";
 
 export default function PopupInfoPlot({ plot, tabIndex }: PopupInfoPlotProps): React.ReactElement {
 
-    // TODO : FIXER PROBLEME D'UPDATE EN CHOISISSANT UN AUTRE PLOT + FAIRE LE SUBPLOT
-
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     useEffect(() => {
+        setIsLoading(true);
         API.getInfosPlot(plot).then(response => {
             setData(response);
             setIsLoading(false);
         });
     }, [plot]);
-
-    console.log(data)
 
     if (isLoading) {
         return (

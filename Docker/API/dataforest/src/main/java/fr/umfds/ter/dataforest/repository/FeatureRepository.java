@@ -21,6 +21,15 @@ public interface FeatureRepository extends MongoRepository<Feature, String> {
     })
     List<PlotLocationResponse> findAllPlotsWithLocation();
 
+    @Query(value = "{ 'properties.plot.id' : ?0 }",
+            fields = "{ 'properties.plot' : 1, 'properties.forest' : 1, 'properties.area' : 1, 'properties.sub_plot' : 1, '_id' : 0 }")
+    List<Feature> getPlot(String idPlot);
+
+    @Query(value = "{ 'properties.plot.id' : ?0, 'properties.plot.sub_plot.id' : ?1 }",
+            fields = "{ 'properties.plot' : 1, 'properties.forest' : 1, 'properties.area' : 1, '_id' : 0 }")
+    List<Feature> getSubPlot(String idPlot, String idSubPlot);
+
+
     @Aggregation(pipeline = {
             "{ $match: { 'properties.plot.id': ?0 } }",
             "{ $group: { " +
@@ -48,11 +57,34 @@ public interface FeatureRepository extends MongoRepository<Feature, String> {
                     "  shannon_index: { $multiply: ['$shannon_index', -1] } " +
                     "} }"
     })
-    Double findShannonIndexByIdPlot(String idPlot);
+    Double findShannonIndexByPlot(String idPlot);
 
-    @Query(value = "{ 'properties.plot.id' : ?0 }", fields = "{ 'properties.plot' : 1, 'properties.forest' : 1, 'properties.area' : 1, 'properties.sub_plot' : 1, '_id' : 0 }")
-    List<Feature> getPlot(String idPlot);
-
-
-
+    @Aggregation(pipeline = {
+            "{ $match: { 'properties.plot.id' : ?0, 'properties.plot.sub_plot.id' : ?1 } }",
+            "{ $group: { " +
+                    "  _id: { plot_id: '$properties.plot.id', species: '$properties.tree.species.species' }, " +
+                    "  count_species: { $sum: 1 } " +
+                    "} }",
+            "{ $group: { " +
+                    "  _id: '$_id.plot_id', " +
+                    "  species_counts: { $push: { species: '$_id.species', count: '$count_species' } }, " +
+                    "  total_trees: { $sum: '$count_species' } " +
+                    "} }",
+            "{ $unwind: '$species_counts' }",
+            "{ $project: { " +
+                    "  p_i: { $divide: ['$species_counts.count', '$total_trees'] } " +
+                    "} }",
+            "{ $project: { " +
+                    "  shannon_term: { $multiply: ['$p_i', { $ln: '$p_i' }] } " +
+                    "} }",
+            "{ $group: { " +
+                    "  _id: null, " +
+                    "  shannon_index: { $sum: '$shannon_term' } " +
+                    "} }",
+            "{ $project: { " +
+                    "  _id: 0, " +
+                    "  shannon_index: { $multiply: ['$shannon_index', -1] } " +
+                    "} }"
+    })
+    Double findShannonIndexBySubPlot(String idPlot, String idSubPlot);
 }

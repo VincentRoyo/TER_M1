@@ -52,7 +52,6 @@ export default function MapGL({
             const subPlotId = info.object.properties.sub_plot_id || null;
 
             if (subPlotId) {
-                console.log(plotId);
                 onSubPlotClick(plotId, subPlotId);
             } else {
                 onPlotClick(plotId);

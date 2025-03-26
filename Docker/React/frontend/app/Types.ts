@@ -72,7 +72,7 @@ export interface Locations {
 export interface SideBarProps {
     elements: PlotLocation[];
     handleClickPlot: (plot: PlotLocation) => void;
-    handleClickSubPlot: (subPlot: SubPlot) => void;
+    handleClickSubPlot: (plot: PlotLocation, subPlot: SubPlot) => void;
     selectedPlot: string | null;
     selectedSubPlot: string | null;
 }
@@ -104,6 +104,7 @@ export interface PopupInfoPlotProps {
 }
 
 export interface PopupInfoSubPlotProps {
+    plot: string;
     subPlot: string;
     tabIndex: number;
 }

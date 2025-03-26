@@ -28,11 +28,24 @@ public class FeatureService {
         plot.setArea(area);
         plot.setNbTrees(nbTrees);
         plot.setDensity((double) (nbTrees/area));
-        plot.setShannon(featureRepository.findShannonIndexByIdPlot(idPlot));
+        plot.setShannon(featureRepository.findShannonIndexByPlot(idPlot));
         return plot;
     }
 
-    public InfosSubPlot getSubPlotInfo(String idSubPlot) {
-        return null;
+    public InfosSubPlot getSubPlotInfo(String idPlot, String idSubPlot) {
+        List<Feature> features = featureRepository.getSubPlot(idPlot, idSubPlot);
+        InfosSubPlot plot = new InfosSubPlot();
+        Integer nbTrees = features.size();
+        Integer area = features.getFirst().getProperties().getPlot().getArea();
+
+        plot.setIdPlot(idSubPlot);
+        plot.setIdPlot(idPlot);
+        plot.setForest(features.getFirst().getProperties().getForest());
+        plot.setArea(area);
+        plot.setNbTrees(nbTrees);
+        plot.setDensity((double) (nbTrees/area));
+        plot.setShannon(featureRepository.findShannonIndexBySubPlot(idPlot, idSubPlot));
+        System.out.println(plot);
+        return plot;
     }
 }

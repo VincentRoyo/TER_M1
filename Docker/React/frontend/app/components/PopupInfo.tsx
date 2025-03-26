@@ -33,7 +33,11 @@ export default function PopupInfo({subPlot, plot}: PopupInfoProps): React.ReactE
                 </Offcanvas.Header>
                 <NavBar tabIndex={tabIndex} setTabIndex={setTabIndex} />
                 <Offcanvas.Body>
-                    {plot ? <PopupInfoPlot plot={plot} tabIndex={tabIndex} /> : subPlot && <PopupInfoSubPlot subPlot={subPlot} tabIndex={tabIndex} />}
+                    {subPlot ? (
+                        <PopupInfoSubPlot plot={plot} subPlot={subPlot} tabIndex={tabIndex} />
+                    ) : (
+                        plot && <PopupInfoPlot plot={plot} tabIndex={tabIndex} />
+                    )}
                 </Offcanvas.Body>
             </Offcanvas>
     )
