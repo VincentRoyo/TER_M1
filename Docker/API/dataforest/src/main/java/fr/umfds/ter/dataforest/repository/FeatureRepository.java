@@ -21,70 +21,164 @@ public interface FeatureRepository extends MongoRepository<Feature, String> {
     })
     List<PlotLocationResponse> findAllPlotsWithLocation();
 
-    @Query(value = "{ 'properties.plot.id' : ?0 }",
-            fields = "{ 'properties.plot' : 1, 'properties.forest' : 1, 'properties.area' : 1, 'properties.sub_plot' : 1, '_id' : 0 }")
-    List<Feature> getPlot(String idPlot);
+    @Aggregation(pipeline = {
+            // 1. On filtre sur le plot ciblé
+            "{ '$match': { 'properties.plot.id': ?0 } }",
 
-    @Query(value = "{ 'properties.plot.id' : ?0, 'properties.plot.sub_plot.id' : ?1 }",
-            fields = "{ 'properties.plot' : 1, 'properties.forest' : 1, 'properties.area' : 1, '_id' : 0 }")
-    List<Feature> getSubPlot(String idPlot, String idSubPlot);
+            // 2. Élimination des doublons : on garde 1 arbre unique par id
+            "{ '$group': { " +
+                    "'_id': '$properties.tree.id', " +
+                    "'plot_id': { '$first': '$properties.plot.id' }, " +
+                    "'species': { '$first': '$properties.tree.species.species' } " +
+                    "} }",
+
+            // 3. On compte les espèces à partir des arbres uniques
+            "{ '$group': { " +
+                    "'_id': { 'plot_id': '$plot_id', 'species': '$species' }, " +
+                    "'count_species': { '$sum': 1 } " +
+                    "} }",
+
+            // 4. Regroupement par plot pour Shannon
+            "{ '$group': { " +
+                    "'_id': '$_id.plot_id', " +
+                    "'species_counts': { '$push': { 'species': '$_id.species', 'count': '$count_species' } }, " +
+                    "'nbTrees': { '$sum': '$count_species' } " +
+                    "} }",
+
+            // 5. Calcul p_i
+            "{ '$unwind': '$species_counts' }",
+
+            "{ '$project': { " +
+                    "'nbTrees': 1, " +
+                    "'species': '$species_counts.species', " +
+                    "'count': '$species_counts.count', " +
+                    "'p_i': { '$divide': [ '$species_counts.count', '$nbTrees' ] } " +
+                    "} }",
+
+            // 6. Shannon term
+            "{ '$project': { " +
+                    "'nbTrees': 1, " +
+                    "'shannon_term': { '$multiply': [ '$p_i', { '$ln': '$p_i' } ] } " +
+                    "} }",
+
+            // 7. Somme des Shannon terms
+            "{ '$group': { " +
+                    "'_id': null, " +
+                    "'nbTrees': { '$first': '$nbTrees' }, " +
+                    "'shannon': { '$sum': '$shannon_term' } " +
+                    "} }",
+
+            // 8. Récupération infos plot
+            "{ '$lookup': { " +
+                    "'from': 'forest1', " +
+                    "'pipeline': [" +
+                    "{ '$match': { 'properties.plot.id': ?0 } }, " +
+                    "{ '$group': { " +
+                    "'_id': '$properties.plot.id', " +
+                    "'forest': { '$first': '$properties.forest' }, " +
+                    "'area': { '$first': '$properties.plot.area' } " +
+                    "} }" +
+                    "], " +
+                    "'as': 'plot_info' " +
+                    "} }",
+
+            // 9. Fusion
+            "{ '$unwind': '$plot_info' }",
+
+            // 10. Projection finale
+            "{ '$project': { " +
+                    "'idPlot': '$plot_info._id', " +
+                    "'forest': '$plot_info.forest', " +
+                    "'area': '$plot_info.area', " +
+                    "'nbTrees': 1, " +
+                    "'shannon': { '$multiply': [ '$shannon', -1 ] }, " +
+                    "'density': { '$cond': [ { '$gt': [ '$plot_info.area', 0 ] }, { '$divide': [ '$nbTrees', '$plot_info.area' ] }, null ] } " +
+                    "} }"
+    })
+    InfosPlot getInfosPlotById(String idPlot);
 
 
     @Aggregation(pipeline = {
-            "{ $match: { 'properties.plot.id': ?0 } }",
-            "{ $group: { " +
-                    "  _id: { plot_id: '$properties.plot.id', species: '$properties.tree.species.species' }, " +
-                    "  count_species: { $sum: 1 } " +
-                    "} }",
-            "{ $group: { " +
-                    "  _id: '$_id.plot_id', " +
-                    "  species_counts: { $push: { species: '$_id.species', count: '$count_species' } }, " +
-                    "  total_trees: { $sum: '$count_species' } " +
-                    "} }",
-            "{ $unwind: '$species_counts' }",
-            "{ $project: { " +
-                    "  p_i: { $divide: ['$species_counts.count', '$total_trees'] } " +
-                    "} }",
-            "{ $project: { " +
-                    "  shannon_term: { $multiply: ['$p_i', { $ln: '$p_i' }] } " +
-                    "} }",
-            "{ $group: { " +
-                    "  _id: null, " +
-                    "  shannon_index: { $sum: '$shannon_term' } " +
-                    "} }",
-            "{ $project: { " +
-                    "  _id: 0, " +
-                    "  shannon_index: { $multiply: ['$shannon_index', -1] } " +
-                    "} }"
-    })
-    Double findShannonIndexByPlot(String idPlot);
+            // 1. Filtrer par plot.id ET sub_plot.id
+            "{ '$match': { 'properties.plot.id': ?0, 'properties.plot.sub_plot.id': ?1 } }",
 
-    @Aggregation(pipeline = {
-            "{ $match: { 'properties.plot.id' : ?0, 'properties.plot.sub_plot.id' : ?1 } }",
-            "{ $group: { " +
-                    "  _id: { plot_id: '$properties.plot.id', species: '$properties.tree.species.species' }, " +
-                    "  count_species: { $sum: 1 } " +
+            // 2. Grouper par arbre unique pour éviter doublons
+            "{ '$group': { " +
+                    "'_id': '$properties.tree.id', " +
+                    "'plot_id': { '$first': '$properties.plot.id' }, " +
+                    "'sub_plot_id': { '$first': '$properties.plot.sub_plot.id' }, " +
+                    "'species': { '$first': '$properties.tree.species.species' } " +
                     "} }",
-            "{ $group: { " +
-                    "  _id: '$_id.plot_id', " +
-                    "  species_counts: { $push: { species: '$_id.species', count: '$count_species' } }, " +
-                    "  total_trees: { $sum: '$count_species' } " +
+
+            // 3. Compter les arbres uniques par espèce
+            "{ '$group': { " +
+                    "'_id': { 'plot_id': '$plot_id', 'sub_plot_id': '$sub_plot_id', 'species': '$species' }, " +
+                    "'count_species': { '$sum': 1 } " +
                     "} }",
-            "{ $unwind: '$species_counts' }",
-            "{ $project: { " +
-                    "  p_i: { $divide: ['$species_counts.count', '$total_trees'] } " +
+
+            // 4. Regrouper par sub_plot pour total arbre + liste des espèces
+            "{ '$group': { " +
+                    "'_id': { 'plot_id': '$_id.plot_id', 'sub_plot_id': '$_id.sub_plot_id' }, " +
+                    "'species_counts': { '$push': { 'species': '$_id.species', 'count': '$count_species' } }, " +
+                    "'nbTrees': { '$sum': '$count_species' } " +
                     "} }",
-            "{ $project: { " +
-                    "  shannon_term: { $multiply: ['$p_i', { $ln: '$p_i' }] } " +
+
+            // 5. Calcul des p_i
+            "{ '$unwind': '$species_counts' }",
+            "{ '$project': { " +
+                    "'_id': 1, " +
+                    "'nbTrees': 1, " +
+                    "'p_i': { '$divide': [ '$species_counts.count', '$nbTrees' ] } " +
                     "} }",
-            "{ $group: { " +
-                    "  _id: null, " +
-                    "  shannon_index: { $sum: '$shannon_term' } " +
+
+            // 6. Calcul du terme de Shannon
+            "{ '$project': { " +
+                    "'_id': 1, " +
+                    "'nbTrees': 1, " +
+                    "'shannon_term': { '$multiply': [ '$p_i', { '$ln': '$p_i' } ] } " +
                     "} }",
-            "{ $project: { " +
-                    "  _id: 0, " +
-                    "  shannon_index: { $multiply: ['$shannon_index', -1] } " +
+
+            // 7. Calcul final de l’indice de Shannon
+            "{ '$group': { " +
+                    "'_id': '$_id', " +
+                    "'nbTrees': { '$first': '$nbTrees' }, " +
+                    "'shannon': { '$sum': '$shannon_term' } " +
+                    "} }",
+
+            // 8. Lookup pour récupérer forest et area depuis le PLOT parent
+            "{ '$lookup': { " +
+                    "'from': 'forest1', " +
+                    "'pipeline': [ " +
+                    "{ '$match': { 'properties.plot.id': ?0 } }, " +
+                    "{ '$group': { " +
+                    "'_id': null, " +
+                    "'forest': { '$first': '$properties.forest' }, " +
+                    "'area': { '$first': '$properties.plot.area' } " +
+                    "} } " +
+                    "], " +
+                    "'as': 'plotInfo' " +
+                    "} }",
+
+            // 9. Unwind de l’info du plot
+            "{ '$unwind': '$plotInfo' }",
+
+            // 10. Projection finale vers InfosSubPlot
+            "{ '$project': { " +
+                    "'idPlot': '$_id.plot_id', " +
+                    "'idSubPlot': '$_id.sub_plot_id', " +
+                    "'forest': '$plotInfo.forest', " +
+                    "'area': '$plotInfo.area', " +
+                    "'nbTrees': 1, " +
+                    "'shannon': { '$multiply': [ '$shannon', -1 ] }, " +
+                    "'density': { '$cond': [ { '$gt': [ '$plotInfo.area', 0 ] }, { '$divide': [ '$nbTrees', '$plotInfo.area' ] }, null ] } " +
                     "} }"
     })
-    Double findShannonIndexBySubPlot(String idPlot, String idSubPlot);
+    InfosSubPlot getInfosSubPlotById(String idPlot, Integer idSubPlot);
+
+
+
+
+
+
+
 }

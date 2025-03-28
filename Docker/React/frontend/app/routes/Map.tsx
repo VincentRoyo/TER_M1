@@ -19,8 +19,8 @@ export default function Map({loaderData}: { loaderData: Locations }): React.Reac
         States pour la popup d'infos
      */
     const [showPopup, setShowPopup] = useState<boolean>(false);
-    const [selectedPlotForPop, setSelectedPlotForPop] = useState<string | null>(null);
-    const [selectedPlotForSubPop, setSelectedPlotForSubPop] = useState<string | null>(null);
+    const [selectedPlotForPop, setSelectedPlotForPop] = useState<string | undefined>();
+    const [selectedPlotForSubPop, setSelectedPlotForSubPop] = useState<string | undefined>();
 
 
     let {plotLocation, treesLocation} = loaderData;
@@ -30,12 +30,12 @@ export default function Map({loaderData}: { loaderData: Locations }): React.Reac
             ...plot,
             sub_plots: [...plot.sub_plots].sort(sortNameSubPlot)
         }
-    )).sort(sortNamePlot)
+    )).sort(sortNamePlot);
 
     function handleClickPlot(plot: PlotLocation): void {
         setMapZoom({zoom: 17, coordinates: getCenter(plot.location.geometry.coordinates[0]), pitch: 50})
         setSelectedPlotForPop(plot.plot_id);
-        setSelectedPlotForSubPop(null);
+        setSelectedPlotForSubPop(undefined);
     }
 
     function handleClickSubPlot(plot: PlotLocation, subPlot: SubPlot): void {

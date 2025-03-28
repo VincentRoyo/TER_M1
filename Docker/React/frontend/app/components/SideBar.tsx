@@ -45,19 +45,22 @@ export default function SideBar(props: SideBarProps): ReactElement {
 
     useEffect(() => {
         if (props.selectedPlot) {
-            const selectedPlot = props.elements.find(el => el.plot_id === props.selectedPlot);
+            const selectedPlot: PlotLocation | undefined = props.elements.find(el => el.plot_id === props.selectedPlot);
+
             if (selectedPlot) {
                 setPlotOpen(selectedPlot);
                 setInitialSubElements(selectedPlot.sub_plots);
                 setSubElements(selectedPlot.sub_plots);
             }
 
-            if (props.selectedSubPlot) {
-                const selectedSubPlot = selectedPlot?.sub_plots.find(el => el.idSubPlot.toString() === props.selectedSubPlot?.toString());
-                props.handleClickSubPlot(selectedSubPlot);
-                setSelectedSubPlot(props.selectedSubPlot.toString());
-                setSelected(props.selectedPlot);
-            } else {
+            if (props.selectedSubPlot && selectedPlot) {
+                const selectedSubPlot: SubPlot | undefined = selectedPlot?.sub_plots.find(el => el.idSubPlot.toString() === props.selectedSubPlot?.toString());
+                if (selectedSubPlot) {
+                    props.handleClickSubPlot(selectedPlot, selectedSubPlot);
+                    setSelectedSubPlot(props.selectedSubPlot.toString());
+                    setSelected(props.selectedPlot);
+                }
+            } else if (selectedPlot) {
                 props.handleClickPlot(selectedPlot);
                 setSelected(props.selectedPlot.toString());
                 setSelectedSubPlot("");

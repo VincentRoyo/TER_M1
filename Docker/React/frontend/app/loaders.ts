@@ -1,4 +1,4 @@
-import type {ApiResponse, Feature, PlotLocation, Point} from "~/Types";
+import type {Feature, PlotLocation, Point} from "~/Types";
 import API from "~/API";
 
 export async function plotLocationLoader(): Promise<PlotLocation[]> {
@@ -9,10 +9,8 @@ export async function plotLocationLoader(): Promise<PlotLocation[]> {
 }
 
 export async function treesLocationLoader(): Promise<Feature<Point>[]> {
-    //TODO CHANGER COMME LA REQUETE D'AVANT
-    const res: ApiResponse<Feature<Point>[]> = await API.getTreesLocation();
-    if (res.error) {
-        console.error(res.error);
-        return [];
-    } else return res.data;
+    const res: Feature<Point>[] = await API.getTreesLocation();
+    if (res) {
+        return res;
+    } else return [];
 }

@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class InfosPlot {
-
     private String idPlot;
     private String forest;
     private Integer area;

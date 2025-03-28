@@ -62,24 +62,20 @@ const API = {
             return response.data;
         } else return undefined;
     },
-    getTreesLocation: async (): ApiResponse<Feature<Point>[]> => { //TODO FAIRE PAREIL QUE LA PREMIERE METHODE
-        try {
-            const response = await fetch(`${API_URL}/allgeo`, {method: "GET"});
-            if (!response.ok) return {error: "Error fetching trees"};
-            const data: Feature<Point>[] = (await response.json()) as Feature<Point>[];
-            return {data};
-        } catch (error: Error) {
-            return {error: error.message};
-        }
+    getTreesLocation: async (): Promise<Feature<Point>[] | undefined> => {
+        const response: ApiResponse<Feature<Point>[]> = await sendRequest<Feature<Point>[]>("allgeo", HttpMethods.GET);
+        if (response.data) {
+            return response.data;
+        } else return undefined;
     },
-    getInfosPlot: async (idPlot: string): Promise<InfoPlot> => {
+    getInfosPlot: async (idPlot: string): Promise<InfoPlot | undefined> => {
         const response: ApiResponse<InfoPlot> = await sendRequest<InfoPlot>(`infoplot/${idPlot}`, HttpMethods.GET);
         if (response.data) {
             return response.data;
         } else return undefined;
     },
-    getInfosSubPlot: async (idPlot: string, idSubPlot: string): Promise<InfoSubPlot> => {
-        const response: ApiResponse<InfoSubPlot> = await sendRequest<InfoSubPlot>(`infoplot/${idPlot}/infosubplot/${idSubPlot}`, HttpMethods.GET);
+    getInfosSubPlot: async (idPlot: string, idSubPlot: string): Promise<InfoSubPlot | undefined> => {
+        const response: ApiResponse<InfoSubPlot> = await sendRequest<InfoSubPlot>(`infoplot/${idPlot}/${idSubPlot}`, HttpMethods.GET);
         if (response.data) {
             return response.data;
         } else return undefined;
