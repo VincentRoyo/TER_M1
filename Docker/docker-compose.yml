@@ -1,0 +1,94 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb_container
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./MongoDB/data/mongo_config:/data/configdb
+    networks:
+      - mongo_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo_express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: password
+    networks:
+      - mongo_network
+
+  init-db:
+    build:
+      context: ../
+      dockerfile: Python/DockerFiles/MongoDB/Dockerfile
+    container_name: init_db_container
+    volumes:
+      - ./MongoDB/output:/app/output
+    depends_on:
+      - mongodb
+    networks:
+      - mongo_network
+    restart: "no"
+
+  spring-boot-app:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    container_name: spring_boot_container
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - mongo_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: React/Dockerfile
+    container_name: react_frontend
+    restart: "no"
+    ports:
+      - "3000:80"
+    depends_on:
+      - spring-boot-app
+    networks:
+      - mongo_network
+      
+  locust:
+    build:
+      context: ./Locust
+    container_name: locust_container
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+    networks:
+      - mongo_network
+    ports:
+      - "8089:8089" 
+    command: >
+      --host=http://spring-boot-app:8080
+    restart: "no"
+
+networks:
+  mongo_network:
+    driver: bridge
+
