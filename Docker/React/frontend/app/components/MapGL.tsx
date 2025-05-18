@@ -1,4 +1,4 @@
-import React, {type SyntheticEvent, useEffect, useState} from "react";
+import React, {type SyntheticEvent, useEffect, useMemo, useState} from "react";
 import DeckGL from "@deck.gl/react";
 import {GeoJsonLayer, TextLayer} from "@deck.gl/layers";
 import {Map} from 'react-map-gl/maplibre';
@@ -8,7 +8,7 @@ import {Layer, type PickingInfo} from "@deck.gl/core";
 import {getCenter} from "~/utils";
 
 /**
- * TODO REGARDER LE PROBLEME DE ZOOM QUAND ON CLIQUE SUR UN PLOT DANS LA SIDEBAR (POSSIBLE QUE L'UTILISATION DE MAPZOOM SOIT UTILISEE AU LIEU DU ZOOM DE DECKGL DE L'UTILISATEUR CAR GETLAYERS CHANGE L'ETAT ET REFRESH LE COMPOSANT)
+ * TODO GERER LES INFOS DES ARBRES QUAND ON CLIQUE DESSUS (APPARITION D'UNE POPUP AVEC LES INFOS)
  * @param mapZoom
  * @param geoJsonData
  * @param treesJsonData
@@ -28,6 +28,19 @@ export default function MapGL({
     const [intervalBearing, setIntervalBearing] = React.useState<NodeJS.Timeout>();
     const [bearing, setBearing] = React.useState<number>(0);
 
+    const treeColor = useMemo(() => {
+        const colorMap: Record<string, [number, number, number]> = {};
+
+        treesJsonData?.forEach((tree: Feature) => {
+
+            const family = tree.properties?.tree?.species?.family;
+            if (family && !colorMap[family]) {
+                colorMap[family] = getColorFromHash(family);
+            }
+        });
+
+        return colorMap;
+    }, []);
 
     useEffect(() => {
         if (mapZoom) {
@@ -45,6 +58,10 @@ export default function MapGL({
     useEffect(() => {
         getLayers();
     }, []);
+
+    useEffect(() => {
+        getLayers(mapZoomState?.zoom || 10);
+    }, [mapZoomState?.zoom]);
 
     function handleLayerClick(info: PickingInfo): void {
         if (info.object?.properties?.name) {
@@ -92,7 +109,8 @@ export default function MapGL({
                     data: geoJsonPlots,
                     filled: true,
                     getFillColor: [255, 0, 0],
-                    getPointRadius: 100,
+                    getPointRadius: 5,
+                    getLineWidth:0.5,
                     pickable: true,
                     onClick: handleLayerClick
                 }));
@@ -119,7 +137,8 @@ export default function MapGL({
                     data: geoJsonSubPlots,
                     filled: true,
                     getFillColor: [0, 0, 255],
-                    getPointRadius: 100,
+                    getPointRadius: 5,
+                    getLineWidth: 0.2,
                     pickable: true,
                     onClick: handleLayerClick
                 }));
@@ -135,9 +154,11 @@ export default function MapGL({
                     id: "geojson-layer-trees",
                     data: geoJsonTrees,
                     filled: true,
-                    getFillColor: [144, 238, 144],
+                    getFillColor: (feature: Feature) => {
+                        const family = feature.properties?.tree?.species?.family;
+                        return treeColor[family] ?? [100, 100, 100];
+                    },
                     getPointRadius: 0.2,
-                    lineWidthMaxPixels: 5,
                     pickable: true,
                     onClick: handleLayerClick
                 }));
@@ -146,9 +167,12 @@ export default function MapGL({
                     id: "geojson-layer-trees",
                     data: geoJsonTrees,
                     filled: true,
-                    getFillColor: [144, 238, 144],
+                    getFillColor: (feature: Feature) => {
+                        const family = feature.properties?.tree?.species?.family;
+                        return treeColor[family] ?? [100, 100, 100];
+                    },
                     getPointRadius: 0.5,
-                    lineWidthMaxPixels: 5,
+                    lineWidthMaxPixels: 0.5,
                     pickable: true,
                     onClick: handleLayerClick
                 }));
@@ -157,9 +181,12 @@ export default function MapGL({
                     id: "geojson-layer-trees",
                     data: geoJsonTrees,
                     filled: true,
-                    getFillColor: [144, 238, 144],
+                    getFillColor: (feature: Feature) => {
+                        const family = feature.properties?.tree?.species?.family;
+                        return treeColor[family] ?? [100, 100, 100];
+                    },
                     getPointRadius: 1,
-                    lineWidthMaxPixels: 10,
+                    lineWidthMaxPixels: 0.5,
                     pickable: true,
                     onClick: handleLayerClick
                 }));
@@ -182,8 +209,26 @@ export default function MapGL({
     }
 
     function handleViewStateChange(params) {
-        getLayers(params.viewState.zoom);
-        clearInterval(intervalBearing);
+        clearInterval(intervalBearing)
+        setMapZoomState({
+            coordinates: [params.viewState.longitude, params.viewState.latitude],
+            zoom: params.viewState.zoom,
+            pitch: params.viewState.pitch,
+            bearing: params.viewState.bearing,
+        });
+    }
+
+    function getColorFromHash(family: string): [number, number, number] {
+        let hash = 0;
+        for (let i = 0; i < family.length; i++) {
+            hash = family.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        const r = (hash >> 0) & 0xFF;
+        const g = (hash >> 8) & 0xFF;
+        const b = (hash >> 16) & 0xFF;
+
+        return [r, g, b];
     }
 
     return (

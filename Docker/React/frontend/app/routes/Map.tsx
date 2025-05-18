@@ -23,7 +23,7 @@ export default function Map({loaderData}: { loaderData: Locations }): React.Reac
     const [selectedPlotForSubPop, setSelectedPlotForSubPop] = useState<string | undefined>();
 
 
-    let {plotLocation, treesLocation} = loaderData;
+    let {plotLocation, treesLocation, treesInfo} = loaderData;
 
     plotLocation = plotLocation.map(plot => (
         {

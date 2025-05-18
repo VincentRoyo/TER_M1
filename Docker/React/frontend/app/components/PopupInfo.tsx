@@ -11,6 +11,9 @@ export default function PopupInfo({subPlot, plot}: PopupInfoProps): React.ReactE
 
     const [tabIndex, setTabIndex] = useState<number>(0);
 
+    const tabPlot = ["Général", "Diversité", "Densité"];
+    const tabSubPlot = ["Général", "Diversité"];
+
     return (
             <Offcanvas
                 show={show}
@@ -29,9 +32,13 @@ export default function PopupInfo({subPlot, plot}: PopupInfoProps): React.ReactE
                 }}
             >
                 <Offcanvas.Header>
-                    <Offcanvas.Title>{plot ? `Informations du plot ${plot}` : `Informations du sous-plot ${subPlot}`}</Offcanvas.Title>
+                    <Offcanvas.Title>{subPlot ? `Informations du sous-plot ${subPlot}` : `Informations du plot ${plot}`}</Offcanvas.Title>
                 </Offcanvas.Header>
-                <NavBar tabIndex={tabIndex} setTabIndex={setTabIndex} />
+                    {subPlot && plot ? (
+                        <NavBar tab={tabSubPlot} tabIndex={tabIndex} setTabIndex={setTabIndex} />
+                    ) : (
+                        <NavBar tab={tabPlot} tabIndex={tabIndex} setTabIndex={setTabIndex} />
+                    )}
                 <Offcanvas.Body>
                     {subPlot && plot ? (
                         <PopupInfoSubPlot plot={plot} subPlot={subPlot} tabIndex={tabIndex} />

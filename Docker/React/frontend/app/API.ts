@@ -5,7 +5,7 @@ import {
     type InfoPlot,
     type InfoSubPlot,
     type PlotLocation,
-    type Point
+    type Point,
 } from "~/Types";
 
 const API_URL: string = import.meta.env.VITE_APP_API_URL;

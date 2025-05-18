@@ -46,18 +46,36 @@ export default function PopupInfoPlot({ plot, tabIndex }: PopupInfoPlotProps): R
             )}
 
             {tabIndex === 1 && (
-                <div>
+                <div className="overflow-auto" style={{ maxHeight: '50vh' }}>
                     <p>Cet onglet contient des informations sur la diversité dans le plot.</p>
-                    <p>Nombre d'espèces différentes : <br/>
-                        Indice de Shannon : <strong>{ data.shannon.toFixed(2) }</strong>
+                    <p>Nombre d'espèces différentes : <strong>{ data.species_distribution.length }</strong>  <br/>
+                        Indice de Shannon : <strong>{ data.shannon.toFixed(2) }</strong> <br/>
                     </p>
+                    <table className="table">
+                        <thead>
+                        <tr>
+                            <th>Espèce</th>
+                            <th>Nombre</th>
+                            <th>Distribution</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {data.species_distribution.sort((a,b) => b.count - a.count).map( (info) =>
+                            <tr key={info.species}>
+                                <td>{info.species ? info.species : "Inconnu"} </td>
+                                <td>{info.count} {info.count == 1 ? "arbre" : "arbres"} </td>
+                                <td><strong>{(info.distribution * 100).toFixed(2) }%</strong></td>
+                            </tr>
+                        )}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
             {tabIndex === 2 && (
                 <div>
                     <p>Cet onglet contient des informations sur la densité dans le plot.</p>
-                    <p>Densité moyenne : <strong>{ data.density } arbres/ha</strong></p>
+                    <p>Densité moyenne : <strong>{ data.density.toFixed(0) } arbres/ha</strong></p>
                 </div>
             )}
         </>

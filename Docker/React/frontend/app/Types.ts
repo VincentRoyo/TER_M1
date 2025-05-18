@@ -89,6 +89,7 @@ export interface PopupInfoProps {
 }
 
 export interface TabProps {
+    tab: string[];
     tabIndex: number;
     setTabIndex: (index: number) => void;
 }
@@ -116,6 +117,7 @@ export interface InfoPlot {
     nbTrees: number;
     density: number;
     shannon: number;
+    species_distribution: SpeciesDistribution[];
 }
 
 export interface InfoSubPlot {
@@ -126,6 +128,13 @@ export interface InfoSubPlot {
     nbTrees: number;
     density: number;
     shannon: number;
+    species_distribution: SpeciesDistribution[];
+}
+
+export interface SpeciesDistribution {
+    species: string;
+    count: number;
+    distribution: number;
 }
 
 export enum HttpMethods {

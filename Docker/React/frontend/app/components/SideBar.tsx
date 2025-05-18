@@ -74,7 +74,7 @@ export default function SideBar(props: SideBarProps): ReactElement {
         <>
             <Button variant={"light"} onClick={handleShow} className="m-3"
                     style={{position: "absolute", top: 20, left: 20, zIndex: 1000, borderRadius: "50%" }}>
-                <i class="bi bi-search fs-4"></i>
+                <i className="bi bi-search fs-4"></i>
             </Button>
 
             <Offcanvas show={show} onHide={handleClose} backdrop={false} style={{ border: "none" }}>

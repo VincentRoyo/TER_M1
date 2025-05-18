@@ -1,6 +1,7 @@
 package fr.umfds.ter.dataforest.model;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class InfosPlot {
@@ -10,4 +11,5 @@ public class InfosPlot {
     private Integer nbTrees;
     private Double density;
     private Double shannon;
+    private List<SpeciesDistribution> species_distribution;
 }

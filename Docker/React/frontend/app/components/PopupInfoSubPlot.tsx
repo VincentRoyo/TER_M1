@@ -29,17 +29,15 @@ export default function PopupInfoSubPlot({plot, subPlot, tabIndex }: PopupInfoSu
                 <>
                     {tabIndex === 0 && (
                         <div>
-                            <p>Cet onglet contient les informations générales sur le sub-plot.</p>
+                            <p>Cet onglet contient les informations générales sur le sous-plot.</p>
                             <p>Forêt : <strong>{ data.forest }</strong> <br/>
-                                Plot : <strong>{ data?.idPlot }</strong>
+                                Plot : <strong>{ data?.idPlot }</strong> <br/>
                             </p>
                             <Container className="infos">
                                 <Row>
-                                    <Col xs={6}><p className="panelLabel">Superficie</p></Col>
                                     <Col xs={6}><p className="panelLabel">Nombre d'arbres</p></Col>
                                 </Row>
                                 <Row>
-                                    <Col xs={6}><p className="panelValue">{ data.area }</p></Col>
                                     <Col xs={6}><p className="panelValue">{ data.nbTrees }</p></Col>
                                 </Row>
                             </Container>
@@ -47,21 +45,33 @@ export default function PopupInfoSubPlot({plot, subPlot, tabIndex }: PopupInfoSu
                     )}
 
                     {tabIndex === 1 && (
-                        <div>
-                            <p>Cet onglet contient des informations sur la diversité dans le sub-plot.</p>
-                            <p>Nombre d'espèces différentes : <strong>{ data.shannon }</strong></p>
-                        </div>
-                    )}
-
-                    {tabIndex === 2 && (
-                        <div>
-                            <p>Cet onglet contient des informations sur la densité dans le sub-plot.</p>
-                            <p>Densité moyenne : <strong>{ data.density }</strong></p>
+                        <div className="overflow-auto" style={{ maxHeight: '50vh' }}>
+                            <p>Cet onglet contient des informations sur la diversité dans le sous-plot.</p>
+                            <p>Nombre d'espèces différentes : <strong>{ data.species_distribution.length }</strong>  <br/>
+                                Indice de Shannon : <strong>{ data.shannon.toFixed(2) }</strong> <br/>
+                            </p>
+                            <table className="table">
+                                <thead>
+                                <tr>
+                                    <th>Espèce</th>
+                                    <th>Nombre</th>
+                                    <th>Distribution</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {data.species_distribution.sort((a,b) => b.count - a.count).map( (info) =>
+                                    <tr key={info.species}>
+                                        <td>{info.species ? info.species : "Inconnu"} </td>
+                                        <td>{info.count} {info.count == 1 ? "arbre" : "arbres"} </td>
+                                        <td><strong>{(info.distribution * 100).toFixed(2) }%</strong></td>
+                                    </tr>
+                                )}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </> : <></>
             }
-
         </>
     )
 }
