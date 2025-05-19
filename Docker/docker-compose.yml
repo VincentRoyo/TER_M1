@@ -77,16 +77,67 @@ services:
     build:
       context: ./Locust
     container_name: locust_container
+    volumes:
+      - ./Locust/output:/app/output
     depends_on:
       init-db:
+        condition: service_completed_successfully
+      init-db-couchdb:
         condition: service_completed_successfully
     networks:
       - mongo_network
     ports:
       - "8089:8089" 
     command: >
+      -f locustfile.py --class-picker
       --host=http://spring-boot-app:8080
     restart: "no"
+    
+ 
+  couchdb:
+    image: couchdb:3
+    container_name: couchdb_container
+    restart: "no"
+    ports:
+      - "5984:5984"
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+      COUCHDB_QUERY_SERVER_JAVASCRIPT_STACK: 1345217728
+    volumes:
+      - ./CouchDB/my_config.ini:/opt/couchdb/etc/local.d/my_config.ini
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+      nproc:
+        soft: 512000
+        hard: 512000
+      stack:
+        soft: 2000000000
+        hard: 2000000000
+    networks:
+      - mongo_network
+
+  init-db-couchdb:
+    build:
+      context: ../
+      dockerfile: Python/DockerFiles/CouchDB/Dockerfile
+    container_name: init_db_couchdb_container
+    volumes:
+      - ./CouchDB/output:/app/output
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    networks:
+      - mongo_network
+    restart: "no"
+
 
 networks:
   mongo_network:

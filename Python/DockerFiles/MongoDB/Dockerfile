@@ -7,7 +7,7 @@ RUN pip install pymongo pandas scipy
 # Copier les scripts Python dans le conteneur
 COPY ../../Python/script-mongo.py /app/script-mongo.py
 #COPY script-couch.py /app/script-couch.py
-COPY ../../Python/script-exec-queries-mongo.py /app/script-exec-queries-mongo.py
+#COPY ../../Python/script-exec-queries-mongo.py /app/script-exec-queries-mongo.py
 
 COPY ../../Python/DataForest/ /app/DataForest/
 
