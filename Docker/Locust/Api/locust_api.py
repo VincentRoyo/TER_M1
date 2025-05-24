@@ -7,9 +7,6 @@ import csv
 plot_ids = set()
 subplot_ids = set()
 
-plot_ids = set()
-subplot_ids = set()
-
 csv_path = "/locust/forest.csv"
 
 # 1. Vérifie que le fichier existe

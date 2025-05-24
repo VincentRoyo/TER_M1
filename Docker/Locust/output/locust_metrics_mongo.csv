@@ -1,0 +1,27 @@
+=== FOREST1 ===
+Request Name,Request Type,Num Requests,Num Failures,Median Response Time (ms),Average Response Time (ms),Min Response Time (ms),Max Response Time (ms),Total Bytes,Avg Bytes/Request,Custom Doc Count,Avg Docs/Request,Avg CPU Usage,Avg Memory Usage
+[forest1] arbres_par_plot_sousplot,MONGO,50,0,280.0,292.4709415435791,225.54,465.92,37432300,748646.0,18950,379.0,44378620.0,699535769.6
+[forest1] especes_par_plot_sousplot,MONGO,50,0,290.0,303.7287664413452,239.5,444.93,19064950,381299.0,18950,379.0,183536780.0,699411906.56
+[forest1] especes_par_plot,MONGO,50,0,87,99.6337366104126,68.54,202.98,2726350,54527.0,1150,23.0,107213760.0,699408302.08
+[forest1] nb_especes_par_plot_sousplot,MONGO,50,0,110.0,116.16219997406006,86.21,192.3,1738250,34765.0,18950,379.0,66353400.0,701817896.96
+[forest1] nb_especes_par_plot,MONGO,50,0,86,101.54433727264404,66.89,194.08,77500,1550.0,1150,23.0,99047260.0,699857960.96
+[forest1] plots_sousplots_location,MONGO,50,0,270.0,274.8380184173584,221.56,341.48,10227650,204553.0,1150,23.0,98985780.0,697423790.08
+
+=== FOREST2 ===
+Request Name,Request Type,Num Requests,Num Failures,Median Response Time (ms),Average Response Time (ms),Min Response Time (ms),Max Response Time (ms),Total Bytes,Avg Bytes/Request,Custom Doc Count,Avg Docs/Request,Avg CPU Usage,Avg Memory Usage
+[forest2] arbres_par_plot_sousplot,MONGO,50,0,98,117.9756498336792,83.24,210.15,28287600,565752.0,18950,379.0,103323700.0,697475317.76
+[forest2] especes_par_plot_sousplot,MONGO,50,0,110.0,126.64453506469727,84.52,203.58,9920250,198405.0,18950,379.0,83677300.0,697310494.72
+[forest2] especes_par_plot,MONGO,50,0,95,104.0235424041748,70.48,170.51,2713700,54274.0,1150,23.0,84630780.0,697578618.88
+[forest2] nb_especes_par_plot_sousplot,MONGO,50,0,110.0,116.59027099609375,81.69,193.86,1738250,34765.0,18950,379.0,58129560.0,692973240.32
+[forest2] nb_especes_par_plot,MONGO,50,0,100.0,111.80014133453369,70.11,222.17,77500,1550.0,1150,23.0,81003960.0,696109711.36
+[forest2] plots_sousplots_location,MONGO,50,0,4,9.50228214263916,3.19,136.96,9903150,198063.0,1150,23.0,79025220.0,700409528.32
+
+=== FOREST3 ===
+Request Name,Request Type,Num Requests,Num Failures,Median Response Time (ms),Average Response Time (ms),Min Response Time (ms),Max Response Time (ms),Total Bytes,Avg Bytes/Request,Custom Doc Count,Avg Docs/Request,Avg CPU Usage,Avg Memory Usage
+[forest3] arbres_par_plot_sousplot,MONGO,50,0,280.0,298.0293941497803,238.67,418.41,111951450,2239029.0,18950,379.0,125747360.0,697316311.04
+[forest3] especes_par_plot_sousplot,MONGO,50,0,280.0,279.791464805603,230.24,366.9,10090000,201800.0,18950,379.0,77504740.0,696500961.28
+[forest3] especes_par_plot,MONGO,50,0,220.0,225.67441940307617,179.96,342.52,2724900,54498.0,1150,23.0,219038540.0,701206528.0
+[forest3] nb_especes_par_plot_sousplot,MONGO,50,0,260.0,275.2677917480469,226.0,371.65,1738250,34765.0,18950,379.0,235025420.0,702560419.84
+[forest3] nb_especes_par_plot,MONGO,50,0,220.0,223.22516918182373,180.37,356.93,77500,1550.0,1150,23.0,159764220.0,701736222.72
+[forest3] plots_sousplots_location,MONGO,50,0,4,23.228964805603027,3.25,162.93,9903150,198063.0,1150,23.0,135054200.0,696587304.96
+
