@@ -2,3 +2,5 @@
 /Docker/MongoDB/data/
 /Docker/CouchDB/output/
 /Docker/CouchDB/data/
+*/.idea/
+*/.vscode/

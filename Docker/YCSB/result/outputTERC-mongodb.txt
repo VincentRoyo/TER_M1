@@ -1,0 +1,26 @@
+/opt/java/openjdk/bin/java  -classpath /YCSB-compile/conf:/YCSB-compile/lib/HdrHistogram-2.1.4.jar:/YCSB-compile/lib/core-0.17.0.jar:/YCSB-compile/lib/htrace-core4-4.1.0-incubating.jar:/YCSB-compile/lib/jackson-core-asl-1.9.4.jar:/YCSB-compile/lib/jackson-mapper-asl-1.9.4.jar:/YCSB-compile/mongodb-binding/lib/logback-classic-1.1.2.jar:/YCSB-compile/mongodb-binding/lib/logback-core-1.1.2.jar:/YCSB-compile/mongodb-binding/lib/mongo-java-driver-3.8.0.jar:/YCSB-compile/mongodb-binding/lib/mongodb-async-driver-2.0.1.jar:/YCSB-compile/mongodb-binding/lib/mongodb-binding-0.17.0.jar:/YCSB-compile/mongodb-binding/lib/slf4j-api-1.7.25.jar:/YCSB-compile/mongodb-binding/lib/snappy-java-1.1.7.1.jar site.ycsb.Client -t -db site.ycsb.db.MongoDbClient -s -P YCSB-compile/workloads/workloadc -p mongodb.url=mongodb://admin:password@mongodb:27017/TER?authSource=admin -p mongodb.database=TER -p mongodb.collection=test
+mongo client connection created with mongodb://admin:password@mongodb:27017/TER?authSource=admin
+[OVERALL], RunTime(ms), 604
+[OVERALL], Throughput(ops/sec), 1655.6291390728477
+[TOTAL_GCS_G1_Young_Generation], Count, 1
+[TOTAL_GC_TIME_G1_Young_Generation], Time(ms), 3
+[TOTAL_GC_TIME_%_G1_Young_Generation], Time(%), 0.49668874172185434
+[TOTAL_GCS_G1_Old_Generation], Count, 0
+[TOTAL_GC_TIME_G1_Old_Generation], Time(ms), 0
+[TOTAL_GC_TIME_%_G1_Old_Generation], Time(%), 0.0
+[TOTAL_GCs], Count, 1
+[TOTAL_GC_TIME], Time(ms), 3
+[TOTAL_GC_TIME_%], Time(%), 0.49668874172185434
+[READ], Operations, 1000
+[READ], AverageLatency(us), 353.133
+[READ], MinLatency(us), 88
+[READ], MaxLatency(us), 67583
+[READ], 95thPercentileLatency(us), 694
+[READ], 99thPercentileLatency(us), 1353
+[READ], Return=OK, 1000
+[CLEANUP], Operations, 1
+[CLEANUP], AverageLatency(us), 1008.0
+[CLEANUP], MinLatency(us), 1008
+[CLEANUP], MaxLatency(us), 1008
+[CLEANUP], 95thPercentileLatency(us), 1008
+[CLEANUP], 99thPercentileLatency(us), 1008

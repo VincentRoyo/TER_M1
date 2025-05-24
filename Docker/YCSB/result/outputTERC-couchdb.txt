@@ -1,0 +1,25 @@
+/opt/java/openjdk/bin/java  -classpath /YCSB-compile/conf:/YCSB-compile/lib/HdrHistogram-2.1.4.jar:/YCSB-compile/lib/core-0.17.0.jar:/YCSB-compile/lib/htrace-core4-4.1.0-incubating.jar:/YCSB-compile/lib/jackson-core-asl-1.9.4.jar:/YCSB-compile/lib/jackson-mapper-asl-1.9.4.jar:/YCSB-compile/couchdb-binding/lib/commons-codec-1.9.jar:/YCSB-compile/couchdb-binding/lib/commons-logging-1.2.jar:/YCSB-compile/couchdb-binding/lib/couchdb-binding-0.18.0-SNAPSHOT.jar:/YCSB-compile/couchdb-binding/lib/gson-2.10.1.jar:/YCSB-compile/couchdb-binding/lib/httpclient-4.5.3.jar:/YCSB-compile/couchdb-binding/lib/httpcore-4.4.6.jar:/YCSB-compile/couchdb-binding/lib/json-simple-1.1.jar:/YCSB-compile/couchdb-binding/lib/lightcouch-0.2.0.jar:/YCSB-compile/couchdb-binding/lib/slf4j-api-1.7.25.jar site.ycsb.Client -t -db site.ycsb.db.CouchClient -s -P YCSB-compile/workloads/workloadc-couchdb
+[OVERALL], RunTime(ms), 1899
+[OVERALL], Throughput(ops/sec), 526.592943654555
+[TOTAL_GCS_G1_Young_Generation], Count, 2
+[TOTAL_GC_TIME_G1_Young_Generation], Time(ms), 6
+[TOTAL_GC_TIME_%_G1_Young_Generation], Time(%), 0.315955766192733
+[TOTAL_GCS_G1_Old_Generation], Count, 0
+[TOTAL_GC_TIME_G1_Old_Generation], Time(ms), 0
+[TOTAL_GC_TIME_%_G1_Old_Generation], Time(%), 0.0
+[TOTAL_GCs], Count, 2
+[TOTAL_GC_TIME], Time(ms), 6
+[TOTAL_GC_TIME_%], Time(%), 0.315955766192733
+[READ], Operations, 1000
+[READ], AverageLatency(us), 1753.119
+[READ], MinLatency(us), 923
+[READ], MaxLatency(us), 7775
+[READ], 95thPercentileLatency(us), 3471
+[READ], 99thPercentileLatency(us), 4819
+[READ], Return=OK, 1000
+[CLEANUP], Operations, 1
+[CLEANUP], AverageLatency(us), 0.0
+[CLEANUP], MinLatency(us), 0
+[CLEANUP], MaxLatency(us), 0
+[CLEANUP], 95thPercentileLatency(us), 0
+[CLEANUP], 99thPercentileLatency(us), 0

@@ -33,11 +33,11 @@ services:
     networks:
       - mongo_network
 
-  init-db:
+  init-db-mongodb:
     build:
       context: ../
       dockerfile: Python/DockerFiles/MongoDB/Dockerfile
-    container_name: init_db_container
+    container_name: init_db_mongodb_container
     volumes:
       - ./MongoDB/output:/app/output
     depends_on:
@@ -80,9 +80,7 @@ services:
     volumes:
       - ./Locust/output:/app/output
     depends_on:
-      init-db:
-        condition: service_completed_successfully
-      init-db-couchdb:
+      ycsb:
         condition: service_completed_successfully
     networks:
       - mongo_network
@@ -92,7 +90,26 @@ services:
       -f locustfile.py --class-picker
       --host=http://spring-boot-app:8080
     restart: "no"
-    
+
+  ycsb:
+    build:
+      context: .
+      dockerfile: ./YCSB/Dockerfile
+    container_name: ycsb_container
+    depends_on:
+      init-db-mongodb:
+        condition: service_completed_successfully
+      init-db-couchdb:
+        condition: service_completed_successfully
+    volumes:
+      - ./YCSB/result:/app/result
+      - ./MongoDB/output:/ExtractIds/MongoDB
+      - ./CouchDB/output:/ExtractIds/CouchDB
+    networks:
+      - mongo_network
+    ports:
+      - "8088:8088"
+    restart: "no"
  
   couchdb:
     image: couchdb:3
@@ -137,6 +154,19 @@ services:
     networks:
       - mongo_network
     restart: "no"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8085:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - mongo_network
 
 
 networks:
