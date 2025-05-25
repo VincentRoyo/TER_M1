@@ -72,7 +72,7 @@ services:
       - spring-boot-app
     networks:
       - mongo_network
-      
+
   locust:
     build:
       context: ./Locust
@@ -87,42 +87,73 @@ services:
     networks:
       - mongo_network
     ports:
-      - "8089:8089" 
+      - "8089:8089"
     command: >
       -f locustfile.py --class-picker
       --host=http://spring-boot-app:8080
     restart: "no"
-    
- 
-  couchdb:
-    image: couchdb:3
-    container_name: couchdb_container
-    restart: "no"
+
+  couchdb1:
+    build: ./CouchDB
+    container_name: couchdb1
+    restart: always
     ports:
       - "5984:5984"
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
-      COUCHDB_QUERY_SERVER_JAVASCRIPT_STACK: 1345217728
-    volumes:
-      - ./CouchDB/my_config.ini:/opt/couchdb/etc/local.d/my_config.ini
+      COUCHDB_SECRET: mysecret
+      NODENAME: couchdb1.local
+      ERL_FLAGS: "-setcookie myclustercookie"
+    networks:
+      mongo_network:
+        aliases:
+          - couchdb1.local
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5984"]
       interval: 5s
       retries: 5
       start_period: 5s
-    ulimits:
-      nofile:
-        soft: 1048576
-        hard: 1048576
-      nproc:
-        soft: 512000
-        hard: 512000
-      stack:
-        soft: 2000000000
-        hard: 2000000000
+
+  couchdb2:
+    build: ./CouchDB
+    container_name: couchdb2
+    restart: always
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+      COUCHDB_SECRET: mysecret
+      NODENAME: couchdb2.local
+      ERL_FLAGS: "-setcookie myclustercookie"
     networks:
-      - mongo_network
+      mongo_network:
+        aliases:
+          - couchdb2.local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+
+  couchdb3:
+    build: ./CouchDB
+    container_name: couchdb3
+    restart: always
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+      COUCHDB_SECRET: mysecret
+      NODENAME: couchdb3.local
+      ERL_FLAGS: "-setcookie myclustercookie"
+    networks:
+      mongo_network:
+        aliases:
+          - couchdb3.local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
 
   init-db-couchdb:
     build:
@@ -132,12 +163,16 @@ services:
     volumes:
       - ./CouchDB/output:/app/output
     depends_on:
-      couchdb:
+      couchdb1:
+        condition: service_healthy
+      couchdb2:
+        condition: service_healthy
+      couchdb3:
         condition: service_healthy
     networks:
       - mongo_network
     restart: "no"
-    
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -150,7 +185,6 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - mongo_network
-
 
 networks:
   mongo_network:

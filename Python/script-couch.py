@@ -3,14 +3,76 @@ import pandas as pd
 import logging
 import requests
 import json
+import time
 from scipy.spatial import ConvexHull
 
 # Logger
 logging.basicConfig(filename='/app/output/couch_init.log', level=logging.INFO,
                     format='%(levelname)s :: %(asctime)s :: %(message)s')
 
-COUCHDB_URL = "http://admin:password@couchdb:5984"
+COUCHDB_URL = "http://admin:password@couchdb1:5984"
 HEADERS = {"Content-Type": "application/json"}
+
+
+def init_cluster():
+    logging.info("🔧 Initialisation du cluster CouchDB...")
+
+    base_url = COUCHDB_URL
+    headers = HEADERS
+
+    try:
+        res = requests.post(f"{base_url}/_cluster_setup", headers=headers, json={
+            "action": "enable_cluster",
+            "bind_address": "0.0.0.0",
+            "username": "admin",
+            "password": "password",
+            "node_count": "3"
+        })
+        logging.info(f"[Cluster] enable_cluster: {res.status_code} - {res.text}")
+
+        res = requests.post(f"{base_url}/_cluster_setup", headers=headers, json={
+            "action": "add_node",
+            "host": "couchdb2.local",
+            "port": 5984,
+            "username": "admin",
+            "password": "password"
+        })
+        logging.info(f"[Cluster] add_node couchdb2: {res.status_code} - {res.text}")
+
+        res = requests.post(f"{base_url}/_cluster_setup", headers=headers, json={
+            "action": "add_node",
+            "host": "couchdb3.local",
+            "port": 5984,
+            "username": "admin",
+            "password": "password"
+        })
+        logging.info(f"[Cluster] add_node couchdb3: {res.status_code} - {res.text}")
+
+        res = requests.post(f"{base_url}/_cluster_setup", headers=headers, json={
+            "action": "finish_cluster"
+        })
+        logging.info(f"[Cluster] finish_cluster: {res.status_code} - {res.text}")
+
+    except Exception as e:
+        logging.error(f"⛔ Erreur lors de la création du cluster CouchDB : {e}")
+        raise
+
+
+def wait_for_cluster_ready():
+    base_url = f"{COUCHDB_URL}/_membership"
+    for i in range(20):
+        try:
+            res = requests.get(base_url)
+            if res.status_code == 200:
+                nodes = res.json().get("all_nodes", [])
+                if len(nodes) >= 3:
+                    logging.info(f"✅ Cluster prêt avec nœuds : {nodes}")
+                    return
+        except Exception as e:
+            logging.warning(f"[Cluster] Attente cluster ({i}) : {e}")
+        time.sleep(3)
+    raise RuntimeError("❌ Cluster CouchDB non prêt après 60s")
+
 
 
 # === GRAHAM SCAN ===
@@ -321,5 +383,7 @@ def insertData():
     logging.info("✅ Initialisation CouchDB terminée.")
 
 # Lancement
+init_cluster()
+wait_for_cluster_ready()
 insertData()
 

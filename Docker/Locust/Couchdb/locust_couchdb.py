@@ -9,9 +9,9 @@ import threading
 from locust.exception import StopUser
 from Couchdb.Workloads import forest1, forest2, forest3
 
-COUCHDB_URL = "http://admin:password@couchdb:5984"
+COUCHDB_URL = "http://admin:password@couchdb1:5984"
 CADVISOR_HOST = "http://cadvisor:8080"
-CADVISOR_CONTAINER = "couchdb_container"
+CADVISOR_CONTAINER = "couchdb1"
 
 custom_metrics = defaultdict(lambda: {
     "bytes": 0,
