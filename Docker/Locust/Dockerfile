@@ -6,6 +6,7 @@ WORKDIR /locust
 
 COPY Api ./Api
 COPY Mongo ./Mongo
+COPY Couchdb ./Couchdb
 COPY locustfile.py .
 COPY forest.csv .
 
