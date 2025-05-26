@@ -6,10 +6,18 @@ import time
 from scipy.spatial import ConvexHull
 import math
 import numpy as np
+import uuid
 
 # Logger pour générer un fichier de log
 logger = logging.getLogger("")
 logging.basicConfig(filename='/app/output/mongo_init.log', level=logging.INFO, format='%(levelname)s :: %(asctime)s :: %(message)s')
+
+mongo_client = pymongo.MongoClient("mongodb://admin:password@mongodb:27017/")
+mongo_db = mongo_client["TER"]
+mongo_col1 = mongo_db["forest1"]
+mongo_col2 = mongo_db["forest2"]
+mongo_col3 = mongo_db["forest3"]
+        
 
 
 """
@@ -235,6 +243,7 @@ def transformToJSON(df):
 
       if tree_id not in trees:
           trees[tree_id] = {
+             "_id": str(uuid.uuid4()),
               "type": "Feature",
               "geometry": {
                   "type": "Point",
@@ -426,6 +435,7 @@ def transformToJSON2(df):
       convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
 
       plots[plot] = {
+         "_id": str(uuid.uuid4()),
           "type": "Feature",
           "geometry": convex_hull_geojson["geometry"],
           "properties": {
@@ -617,6 +627,7 @@ def transformToJSON3(df):
       convex_hull_geojson = chansAlgorithm(geo_group["geometry"].iloc[0])
 
       plots[plot] = {
+         "_id": str(uuid.uuid4()),
           "type": "Feature",
           "geometry": convex_hull_geojson["geometry"],
           "properties": {
@@ -701,7 +712,6 @@ def transformToJSON3(df):
 
   return plots
   
-
 
 """
     Fonction d'insertion des données dans une base de données MongoDB
@@ -802,5 +812,15 @@ def insertData():
         except Exception as e:
             logger.error(f"Error while inserting data: {e}")
 
+def extract_ids(collection, output_file):
+
+    with open(output_file, 'w') as f:
+        for doc in collection.find({}, {"_id": 1}):
+            f.write(str(doc["_id"]) + "\n")
+
+    print(f"✅ {collection.count_documents({})} _id écrits dans {output_file}")
 
 insertData()
+extract_ids(mongo_col1, "/app/output/forest1_ids.txt")
+extract_ids(mongo_col2, "/app/output/forest2_ids.txt")
+extract_ids(mongo_col3, "/app/output/forest3_ids.txt")

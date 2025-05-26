@@ -382,8 +382,30 @@ def insertData():
 
     logging.info("✅ Initialisation CouchDB terminée.")
 
+
+def extract_ids(dbname, output_file, user=None, password=None):
+    url = "http://couchdb:5984"
+    couchdb_url = url.rstrip('/') + f'/{dbname}/_all_docs'
+    params = {"include_docs": "false"}
+    auth = (user, password) if user and password else None
+
+    response = requests.get(couchdb_url, params=params, auth=auth)
+    response.raise_for_status()
+
+    data = response.json()
+    rows = data.get("rows", [])
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(str(row["id"]) + "\n")
+
+    print(f"✅ {len(rows)} _id écrits dans {output_file}")
+
 # Lancement
 init_cluster()
 wait_for_cluster_ready()
 insertData()
+extract_ids("forest1", "/app/output/forest1_ids.txt",  "admin", "password")
+extract_ids("forest2", "/app/output/forest2_ids.txt",  "admin", "password")
+extract_ids("forest3", "/app/output/forest3_ids.txt",  "admin", "password")
 
