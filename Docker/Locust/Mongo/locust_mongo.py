@@ -14,16 +14,15 @@ from Mongo.Workloads import forest1, forest2, forest3
 MONGO_CONTAINER_NAME = "mongodb_container"
 CADVISOR_HOST = "http://cadvisor:8080"
 
-# Accumulateur pour métriques personnalisées
 custom_metrics = defaultdict(lambda: {
     "bytes": 0,
     "docs": 0,
     "calls": 0,
-    "durations": [],
-    "min_time": float("inf"),
-    "max_time": 0,
-    "cpu_usage": [],
-    "memory_usage": []
+    "latencies": [],
+    "min": float("inf"),
+    "max": float("-inf"),
+    "cpu": [],
+    "mem": []
 })
 
 def get_container_stats(container_name):
@@ -37,7 +36,7 @@ def get_container_stats(container_name):
                     return 0, 0
                 last = stats[-1]
                 cpu = last["cpu"].get("usage", {}).get("total", 0)
-                mem = last["memory"].get("working_set", 0)  # updated line
+                mem = last["memory"].get("working_set", 0)
                 return cpu, mem
     except Exception as e:
         print(f"[WARN] Stat collection failed: {e}")
@@ -90,11 +89,11 @@ class MongoUser(User):
                     custom_metrics[key]["docs"] += doc_count
                     custom_metrics[key]["bytes"] += total_bytes
                     custom_metrics[key]["calls"] += 1
-                    custom_metrics[key]["durations"].append(duration)
-                    custom_metrics[key]["min_time"] = min(custom_metrics[key]["min_time"], duration)
-                    custom_metrics[key]["max_time"] = max(custom_metrics[key]["max_time"], duration)
-                    custom_metrics[key]["cpu_usage"].append(cpu_after - cpu_before)
-                    custom_metrics[key]["memory_usage"].append(mem_after)
+                    custom_metrics[key]["latencies"].append(duration)
+                    custom_metrics[key]["min"] = min(custom_metrics[key]["min"], duration)
+                    custom_metrics[key]["max"] = max(custom_metrics[key]["max"], duration)
+                    custom_metrics[key]["cpu"].append(cpu_after - cpu_before)
+                    custom_metrics[key]["mem"].append(mem_after)
 
                     events.request.fire(
                         request_type="MONGO",
@@ -147,10 +146,10 @@ def export_mongodb_metrics_csv(environment, **kwargs):
         custom = custom_metrics.get((collection, query_name), {})
         total_docs = custom.get("docs", 0)
         avg_docs = total_docs / custom.get("calls", 1) if custom.get("calls", 1) else 0
-        min_time = round(custom.get("min_time", 0), 2)
-        max_time = round(custom.get("max_time", 0), 2)
-        avg_cpu = sum(custom.get("cpu_usage", [])) / len(custom.get("cpu_usage", [])) if custom.get("cpu_usage") else 0
-        avg_mem = sum(custom.get("memory_usage", [])) / len(custom.get("memory_usage", [])) if custom.get("memory_usage") else 0
+        min_latency = round(custom.get("min", 0), 2)
+        max_latency = round(custom.get("max", 0), 2)
+        avg_cpu = sum(custom.get("cpu", [])) / len(custom.get("cpu", [])) if custom.get("cpu") else 0
+        avg_mem = sum(custom.get("mem", [])) / len(custom.get("mem", [])) if custom.get("mem") else 0
 
         grouped.get(collection, grouped["unknown"]).append([
             request_name,
@@ -159,12 +158,14 @@ def export_mongodb_metrics_csv(environment, **kwargs):
             num_failures,
             stats.median_response_time,
             stats.avg_response_time,
-            min_time,
-            max_time,
+            stats.min_response_time,
+            stats.max_response_time,
             total_bytes,
             round(avg_bytes, 2),
             total_docs,
             round(avg_docs, 2),
+            min_latency,
+            max_latency,
             round(avg_cpu, 2),
             round(avg_mem, 2)
         ])
@@ -177,7 +178,8 @@ def export_mongodb_metrics_csv(environment, **kwargs):
             "Min Response Time (ms)", "Max Response Time (ms)",
             "Total Bytes", "Avg Bytes/Request",
             "Custom Doc Count", "Avg Docs/Request",
-            "Avg CPU Usage", "Avg Memory Usage"
+            "Custom Min Latency", "Custom Max Latency",
+            "Avg CPU Delta", "Avg Memory Working Set"
         ]
 
         for forest in ["forest1", "forest2", "forest3"]:
