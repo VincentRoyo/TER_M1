@@ -384,7 +384,7 @@ def insertData():
 
 
 def extract_ids(dbname, output_file, user=None, password=None):
-    url = "http://couchdb:5984"
+    url = "http://couchdb1:5984"
     couchdb_url = url.rstrip('/') + f'/{dbname}/_all_docs'
     params = {"include_docs": "false"}
     auth = (user, password) if user and password else None

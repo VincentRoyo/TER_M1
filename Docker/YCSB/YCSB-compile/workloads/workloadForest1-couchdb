@@ -35,7 +35,7 @@ insertproportion=0
 requestdistribution=zipfian
 customkey.file=/ExtractIds/CouchDB/forest1_ids.txt
 collection=forest1
-couchdb.host=couchdb
+couchdb.host=couchdb1
 
 
 

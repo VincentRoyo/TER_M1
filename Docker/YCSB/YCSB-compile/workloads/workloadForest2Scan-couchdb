@@ -39,7 +39,7 @@ requestdistribution=zipfian
 customkey.file=/ExtractIds/CouchDB/forest2_ids.txt
 collection=forest2
 couchdb.dbname=forest2
-couchdb.host=couchdb
+couchdb.host=couchdb1
 
 
 
